@@ -67,8 +67,6 @@ int Db_original::callback(void *data, int argc, char **argv, char **azColName) {
 */
     return 0;
 }
-
-
 void Db_original::loop(time_t timestamp)  {
     //La funzione riceve il timestamp e calcola l'intervallo di tempo da cui prelevare il dato
 
@@ -116,7 +114,7 @@ void Db_original::loop(time_t timestamp)  {
     //creo una mappa con MAC->TIMESTAMP in cui salvo solo le rilevazioni ricevute da N_schede e mantenendo solo l'ultima rilevazione
     map<string, string> last_mac;
     for (map<mac_time, set<schema_original>>::iterator it = dati_scheda.begin(); it != dati_scheda.end(); ++it) {
-        if ((it->second).size() == /*triang.n_schede */ N_schede)
+        if ((it->second).size() == triang.nschede)
         {
             map<string, string>::iterator selected = last_mac.find(string((it->first).MAC));
             if (selected == last_mac.end()) {
@@ -181,6 +179,185 @@ void Db_original::loop(time_t timestamp)  {
 */
     dati_scheda.clear();
     last_mac.clear();
+    //sqlite3_free(zErrMsg);
+}
+
+
+
+
+
+map<string,map<string,set<schema_original>>> Db_original::rilevazioni;
+int Db_original::callback1(void *data, int argc, char **argv, char **azColName) {
+    (void)data;(void)argc;(void)argv;(void)azColName;
+
+    int i;
+
+    //i record sono inseriti in una mappa avente MAC-TIMESTAMP come chiave e un set dei record aventi ROOT diversi
+    //Cosi tutte le rilevazioni allo stesso tempo per lo stesso mac sono inserite nel set, e si eliminano doppioni
+    string MAC_disp(argv[1]);
+    string MAC_scheda(argv[5]);
+    schema_original dati(argv[0],argv[1],argv[2],argv[3],argv[4],argv[5]);
+
+    auto found = rilevazioni.find(MAC_disp);
+
+    if (found != rilevazioni.end()) {
+        auto scheda_found=(found->second).find(MAC_scheda);
+        if(scheda_found!=(found->second).end())
+        {
+            (scheda_found->second).insert(dati);
+        }
+         else
+        {
+            set<schema_original> v={dati};
+            found->second.insert(pair<string,set<schema_original>>(MAC_scheda,v));
+        }
+    } else {
+        set<schema_original> v={dati};
+        map<string,set<schema_original>> ril_scheda={{MAC_scheda,v}};
+        rilevazioni.insert(pair<string,map<string,set<schema_original>>>(MAC_disp,ril_scheda));
+    }
+
+    /*// da eliminare, comodo per debug iniziale
+    for (i = 0; i < argc; i++) {
+        printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
+    }
+    printf("\n");
+*/
+    return 0;
+}
+
+
+void Db_original::loop1(time_t timestamp)  {
+    //La funzione riceve il timestamp e calcola l'intervallo di tempo da cui prelevare il dato
+
+    //n_sec e un parametro globale che indica ogni quanto la pulizia e effettuata
+    int n_sec = 30;
+    struct tm  timeinfo;
+    time_t rawtime;
+
+    CTime timestamp_in(timestamp);
+    char timestamp_in_char[30];
+    rawtime = timestamp_in.GetTime();
+    localtime_s(&timeinfo, &rawtime);
+    strftime(timestamp_in_char, 30, "%Y%m%d%H%M%S", &timeinfo);
+    string timestamp_in_s(timestamp_in_char);
+
+    char timestamp_fin_char[30];
+    CTimeSpan sec_range(0, 0, 0, n_sec);
+    CTime timestamp_fin = timestamp_in + sec_range;
+    rawtime = timestamp_fin.GetTime();
+    localtime_s(&timeinfo, &rawtime);
+    strftime(timestamp_fin_char, 30, "%Y%m%d%H%M%S", &timeinfo);
+    string timestamp_fin_s(timestamp_fin_char);
+
+    //seleziono tutti i record aventi tempo nell'intervallo
+
+    string sql;
+    sql = "SELECT * FROM Originale where TIMESTAMP >='"+timestamp_in_s+"' AND TIMESTAMP <'" + timestamp_fin_s+"'";
+
+    /* Execute SQL statement */
+    //char *zErrMsg = nullptr;
+    int rc;
+    const char* data = "Callback function called";
+
+    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data,NULL); //per oni record ritornato dalla query chiamo la callback
+
+    if (rc != SQLITE_OK) {
+        //fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        qDebug()<< "ERROR select from Originale: "<< sqlite3_errmsg(db);
+
+       // sqlite3_free(zErrMsg);
+    } else {
+        //fprintf(stdout, "Operation done successfully\n");
+    }
+
+    map<string,vector<schema_original>> ril_per_disp;
+    for(map<string,map<string,set<schema_original>>>::iterator it=rilevazioni.begin(); it!=rilevazioni.end();++it)
+    {
+
+        auto actual=ril_per_disp.insert(pair<string,vector<schema_original>>(it->first,vector<schema_original>())).first;
+        if(it->second.size()==triang.nschede)
+        {
+            for(map<string,set<schema_original>>::iterator it2=(it->second).begin();it2!=it->second.end(); ++it2)
+            {
+            string max="0";
+            int n_ril=0;
+            int sum=0;
+            string mac_d,mac_s;
+            int id,is_pub=2;
+
+            for(set<schema_original>::iterator it3=it2->second.begin();it3!=it2->second.end();++it3)
+            {
+                if(is_pub=2)
+                {
+                    id=it3->ID;
+                    mac_d=it3->MAC;
+                    mac_s=it3->root;
+                    is_pub=it3->isPub;
+                }
+                n_ril++;
+                sum+=it3->RSSI;
+                if(max<it3->timestamp)
+                    max=it3->timestamp;
+
+            }
+            actual->second.push_back(schema_original(id,mac_d,is_pub,sum/n_ril,max,mac_s));
+
+
+            }
+
+        }
+    }
+
+
+
+
+    for (map<string, vector<schema_original>>::iterator selected = ril_per_disp.begin(); selected != ril_per_disp.end(); ++selected) {
+
+        //per ogni MAC-TIMESTAMP che rispetta la condizione, chiamo la triangolazione passando un vector con i record e il numero di record del vettore(e quindi delle schede)
+        //schema_triang dato_triang = triangolazione(vector_dati, N_schede);
+        Point estimated_point = triang.triangolate(selected->second);
+
+        //serve solo per test
+        //schema_triang dato_triang(3, "98-54-1B-31-AC-8B", 0, "20191001190020", 10, 20);
+    if(!isnan(estimated_point.x)||!isnan(estimated_point.y)){
+        schema_triang dato_triang(69, selected->first.c_str(), selected->second[0].isPub, selected->second[0].timestamp.c_str(), estimated_point.x, estimated_point.y);
+
+        //inserisco il risultato della triangolazione nella tabella History
+        sqlite3_stmt *stmt;
+        sqlite3_prepare_v2(db, "insert into History (MAC,ISPUB,TIMESTAMP,X,Y) values (?2,?4,?5,?6,?7);", -1, &stmt, nullptr);
+        sqlite3_bind_text(stmt, 2, dato_triang.MAC, -1, SQLITE_STATIC);
+        sqlite3_bind_int(stmt, 4, dato_triang.isPub);
+        sqlite3_bind_text(stmt, 5,dato_triang.timestamp, -1, SQLITE_STATIC);
+        sqlite3_bind_double(stmt, 6, dato_triang.x );
+        sqlite3_bind_double(stmt, 7, dato_triang.y );
+
+        rc = sqlite3_step(stmt);
+        if (rc != SQLITE_DONE) {
+            qDebug()<< "ERROR inserting data: "<< sqlite3_errmsg(db);
+           // printf("ERROR inserting data: %s\n", sqlite3_errmsg(db));
+
+        }
+
+        sqlite3_finalize(stmt);
+    }
+    }
+/*
+    //elimino le righe analizzate dalla tabellaa originale
+    sql = "DELETE FROM Original where TIMESTAMP >='" + timestamp_in_s + "' AND TIMESTAMP <'" + timestamp_fin_s + "'";
+    rc = sqlite3_exec(db, sql.c_str(), NULL, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
+
+    if (rc != SQLITE_OK) {
+        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    }
+    else {
+        fprintf(stdout, "Operation done successfully\n");
+    }
+
+*/
+    rilevazioni.clear();
+    ril_per_disp.clear();
     //sqlite3_free(zErrMsg);
 }
 

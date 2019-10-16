@@ -287,7 +287,7 @@ MainWindow::MainWindow(QWidget *parent)
         connect(this->timer, &QTimer::timeout,this, [db]() {
             time_t timev;
             time(&timev);
-            db->loop(timev);});
+            db->loop1(timev);});
         this->timer->start();
     });
 

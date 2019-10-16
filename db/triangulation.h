@@ -15,8 +15,9 @@ class Triangulation {
   static vector<Distance> distances;
   static int measure_power; //potenza misurata a un metro di distanza
   static float constant_envir; //constante ambientale(da 2 a 4)
-  static int nschede;
+
 public:
+   static int nschede;
   Triangulation();
   static void initTriang(map<string, Point> vector_dati, int, float, int);
   static Point triangolate(vector<schema_original>);

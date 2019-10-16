@@ -11,3 +11,12 @@ schema_original::schema_original(char* ID, char* MAC,char* isPub,char* RSSI,char
 	this->root =root;
 
 }
+schema_original::schema_original(int ID, string MAC,int isPub,int RSSI,string timestamp,string root) {
+    this->ID = ID;
+    this->MAC= MAC;
+    this->isPub = isPub;
+    this->RSSI = RSSI;
+    this->timestamp=timestamp;
+    this->root =root;
+
+}

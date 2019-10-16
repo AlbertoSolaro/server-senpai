@@ -19,6 +19,10 @@ class Db_original {
 	static vector<schema_triang> last_positions_ril;
 	sqlite3 *db;
 
+   static map<string,map<string,set<schema_original>>> rilevazioni;
+    static int callback1(void *data, int argc, char **argv, char **azColName);
+
+
 	static int callback(void *data, int argc, char **argv, char **azColName);
 	static int callback_count_ril_pub(void *data, int argc, char **argv, char **azColName);
 	static int callback_count_ril_no_pub(void *data, int argc, char **argv, char **azColName);
@@ -28,6 +32,9 @@ class Db_original {
 public:
     Triangulation triang;
 	Db_original();
+
+    void loop1(time_t timestamp);
+
     void loop(time_t timestamp);
     map<string,num_ril> number_of_rilevations(time_t timestamp_start, time_t timestamp_end);
 	vector<schema_triang> last_positions(time_t timestamp);
