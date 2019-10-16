@@ -36,3 +36,10 @@ class Point {
     float y;
     Point(float x, float y) { this->x = x; this->y = y; }
 };
+
+class num_ril {
+  public:
+    int n_pub;
+    int n_priv;
+    num_ril() { n_pub=0; n_priv=0; };
+};

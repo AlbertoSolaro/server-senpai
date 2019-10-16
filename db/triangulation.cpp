@@ -12,6 +12,7 @@ Triangulation::Triangulation(){}
 
 map<string, Point> Triangulation::roots;
 vector<Distance> Triangulation::distances;
+
 int Triangulation::measure_power;
 float Triangulation::constant_envir;
 int Triangulation::nschede;
@@ -59,7 +60,7 @@ void Triangulation::initTriang(map<string, Point> r, int measured_power, float e
   cout<<endl;
 }
 
-Point Triangulation::triangolate(vector<schema_original> vector_dati, int N_schede) {
+Point Triangulation::triangolate(vector<schema_original> vector_dati) {
   auto distances = getDistances();
   if(distances.empty())
       qDebug()<<"CAZZO DI BUDDAH";
@@ -86,9 +87,7 @@ Point Triangulation::triangolate(vector<schema_original> vector_dati, int N_sche
 }
 
 float Triangulation::rssi2meter(int rssi){
-    //return rssi*-1.0;
     return pow(10,((measure_power)-rssi)/(constant_envir*10));
-   // return (10^((measure_power)-rssi)/(constant_envir*10)));
 }
 
 vector<Point> Triangulation::findPoints(Distance rootDistance, map<string, float> dists) {
@@ -130,7 +129,11 @@ Point Triangulation::findTruePoint(vector< Point > points) {
     auto roots = Triangulation::getRoots();
 
   vector<Column> matrix;
-  int k=roots.size()*(roots.size()-1)/2;
+  int k_correct=roots.size()*(roots.size()-1)/2;
+  int k = points.size()/2;
+
+  if(k_correct > k)
+    qDebug() << "Punti scartati: " << k_correct - k;
   
   for(int i=0; i<points.size(); i++){
     matrix.push_back(Column(i));
@@ -155,7 +158,7 @@ Point Triangulation::findTruePoint(vector< Point > points) {
   }
 
   typedef function<bool(pair<int, int>, pair<int, int>)> Comparator;
-  Comparator compFunctor = [](pair<int, int> elem1 ,std::pair<int, int> elem2) { if(elem1.second == elem2.second) return elem1.first<elem2.first; else return (elem1.second>elem2.second); };
+  Comparator compFunctor = [](pair<int, int> elem1 ,std::pair<int, int> elem2) { if(elem1.second == elem2.second) return elem1.first>elem2.first; else return (elem1.second>elem2.second); };
 
   set<pair<int, int>, Comparator> setOfWords(reps.begin(), reps.end(), compFunctor);
   

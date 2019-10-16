@@ -14,7 +14,7 @@ using namespace std;
 
 class Db_original {
 	static map<string, statistics> stat;
-	static map<string, int*> count_ril;
+    static map<string, num_ril> count_ril;
     static map<mac_time, set<schema_original>> dati_scheda;
 	static vector<schema_triang> last_positions_ril;
 	sqlite3 *db;
@@ -29,7 +29,7 @@ public:
     Triangulation triang;
 	Db_original();
     void loop(time_t timestamp);
-	map<string,int*> number_of_rilevations(time_t timestamp_start, time_t timestamp_end);
+    map<string,num_ril> number_of_rilevations(time_t timestamp_start, time_t timestamp_end);
 	vector<schema_triang> last_positions(time_t timestamp);
 	best_k_mac statistics_fun(time_t timestamp_start, int mode);
 	~Db_original();

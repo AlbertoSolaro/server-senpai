@@ -20,6 +20,7 @@ public:
   Triangulation();
   static void initTriang(map<string, Point> vector_dati, int, float, int);
   static Point triangolate(vector<schema_original>, int);
+
   static float rssi2meter(int rssi);
   static vector<Point> findPoints(Distance, map<string, float>);
   static Point findTruePoint(vector<Point>);

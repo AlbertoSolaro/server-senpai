@@ -21,7 +21,7 @@
 #define K_BEST 2 //numero di mac piu frequenti ritornati
 #define INT_SEC 120   //intervallo valido per mostrare l'ultima posizione
 #define N_rilevazioni 1  //numero rilevazioni necessarie per essere "continuamente presente"
-#define N_schede 2		//numero di schede di rilevazione
+#define N_schede 3		//numero di schede di rilevazione
 #define minuti_cont 5	//intervallo di tempo in cui rilevare dispositivi presenti
 using namespace std;
 
@@ -32,10 +32,11 @@ using namespace std;
 
 Db_original::Db_original() {
     sqlite3_open("Progetto_malnati.db", &db);
+
 }
 
 map<mac_time, set<schema_original>>  Db_original::dati_scheda;
-map<string, int*> Db_original::count_ril;
+map<string,num_ril> Db_original::count_ril;
 vector<schema_triang> Db_original::last_positions_ril;
 map<string, statistics> Db_original::stat;
 
@@ -58,12 +59,12 @@ int Db_original::callback(void *data, int argc, char **argv, char **azColName) {
         dati_scheda.insert(pair<mac_time,set<schema_original>>(key,v));
     }
 
-    // da eliminare, comodo per debug iniziale
+    /*// da eliminare, comodo per debug iniziale
     for (i = 0; i < argc; i++) {
         printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
     }
     printf("\n");
-
+*/
     return 0;
 }
 
@@ -97,25 +98,25 @@ void Db_original::loop(time_t timestamp)  {
     sql = "SELECT * FROM Originale where TIMESTAMP >='"+timestamp_in_s+"' AND TIMESTAMP <'" + timestamp_fin_s+"'";
 
     /* Execute SQL statement */
-    char *zErrMsg = nullptr;
+    //char *zErrMsg = nullptr;
     int rc;
     const char* data = "Callback function called";
 
-    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
+    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data,NULL); //per oni record ritornato dalla query chiamo la callback
 
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        //fprintf(stderr, "SQL error: %s\n", zErrMsg);
         qDebug()<< "ERROR select from Originale: "<< sqlite3_errmsg(db);
 
-        sqlite3_free(zErrMsg);
+       // sqlite3_free(zErrMsg);
     } else {
-        fprintf(stdout, "Operation done successfully\n");
+        //fprintf(stdout, "Operation done successfully\n");
     }
 
     //creo una mappa con MAC->TIMESTAMP in cui salvo solo le rilevazioni ricevute da N_schede e mantenendo solo l'ultima rilevazione
     map<string, string> last_mac;
     for (map<mac_time, set<schema_original>>::iterator it = dati_scheda.begin(); it != dati_scheda.end(); ++it) {
-        if ((it->second).size() == N_schede)
+        if ((it->second).size() == /*triang.n_schede */ N_schede)
         {
             map<string, string>::iterator selected = last_mac.find(string((it->first).MAC));
             if (selected == last_mac.end()) {
@@ -138,7 +139,7 @@ void Db_original::loop(time_t timestamp)  {
 
         //per ogni MAC-TIMESTAMP che rispetta la condizione, chiamo la triangolazione passando un vector con i record e il numero di record del vettore(e quindi delle schede)
         //schema_triang dato_triang = triangolazione(vector_dati, N_schede);
-        Point estimated_point = triang.triangolate(vector_dati, N_schede);
+        Point estimated_point = triang.triangolate(vector_dati);
 
         //serve solo per test
         //schema_triang dato_triang(3, "98-54-1B-31-AC-8B", 0, "20191001190020", 10, 20);
@@ -157,7 +158,7 @@ void Db_original::loop(time_t timestamp)  {
         rc = sqlite3_step(stmt);
         if (rc != SQLITE_DONE) {
             qDebug()<< "ERROR inserting data: "<< sqlite3_errmsg(db);
-            printf("ERROR inserting data: %s\n", sqlite3_errmsg(db));
+           // printf("ERROR inserting data: %s\n", sqlite3_errmsg(db));
 
         }
 
@@ -188,7 +189,7 @@ int Db_original::callback_count_ril_pub(void *data, int argc, char **argv, char 
     //ogni volta che arriva un record vado a implementare il contatore delle rilevazioni pubbliche(ovvero bit 0) nell'orario rilevato,
     //ovvero nell'ultimo elemento della mappa, perche inserisco gli elementi uno alla volta prima di fare la query al database
 
-    (count_ril.rbegin())->second[0]++;
+    (count_ril.rbegin())->second.n_pub++;
 
     return 0;
 }
@@ -198,13 +199,13 @@ int Db_original::callback_count_ril_no_pub(void *data, int argc, char **argv, ch
     //ogni volta che arriva un record vado a implementare il contatore delle rilevazioni non pubbliche(ovvero bit 1) nell'orario rilevato,
     //ovvero nell'ultimo elemento della mappa, perche inserisco gli elementi uno alla volta prima di fare la query al database
 
-    (count_ril.rbegin())->second[1]++;
+    (count_ril.rbegin())->second.n_priv++;
 
     return 0;
 }
 
 
-map<string,int*> Db_original::number_of_rilevations(time_t timestamp_start, time_t timestamp_end) {
+map<string,num_ril> Db_original::number_of_rilevations(time_t timestamp_start, time_t timestamp_end) {
     //questa funzione riceve due timestamp: il primo impostato dall'utente, il secondo che abbia differenza di 5 minuti, e possono essere impostati dall'utente e consideriamo la mezzora successiva, mostrando le statistiche ogni 5 minuti
 
     //questa soluzione conta quante sono le rilevazioni di un dispositivo nei 5 minuti e restituisce solo quelle rilevate piu di N_volte
@@ -241,8 +242,8 @@ map<string,int*> Db_original::number_of_rilevations(time_t timestamp_start, time
         localtime_s(&timeinfo, &rawtime);
         strftime(timestamp_fin_char, 20, "%Y%m%d%H%M%S", &timeinfo);
         string timestamp_fin_s(timestamp_fin_char);
-
-        count_ril.insert(pair<string, int*>(timestamp_in_s, init_count));  //ogni riga ha l'orario di inizio e due bit a 0: il bit 0
+        num_ril n_ril;
+        count_ril.insert(pair<string, num_ril>(timestamp_in_s, n_ril));  //ogni riga ha l'orario di inizio e due bit a 0: il bit 0
                                                                           //indica mac pubblico, il bit 1 indica mac non pubblico
 
         string sql;
@@ -255,7 +256,7 @@ map<string,int*> Db_original::number_of_rilevations(time_t timestamp_start, time
             sqlite3_free(zErrMsg);
         }
         else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" <<endl;
+          //  clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" <<endl;
         }
 
         sql = "SELECT COUNT(*) FROM History where ISPUB=0 AND TIMESTAMP >='" + timestamp_in_s + "' AND TIMESTAMP <'" + timestamp_fin_s + "' GROUP BY MAC HAVING COUNT(DISTINCT TIMESTAMP)>=" + to_string(N_rilevazioni);
@@ -266,11 +267,10 @@ map<string,int*> Db_original::number_of_rilevations(time_t timestamp_start, time
             clog << "SQL error in Query count_rilevazioni_no_pub : " << zErrMsg << endl;
             sqlite3_free(zErrMsg);
         } else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
+          //  clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
         }
     }
-
-    return count_ril;
+     return count_ril;
 
 }
 
@@ -327,7 +327,7 @@ vector<schema_triang> Db_original::last_positions(time_t timestamp) {
         sqlite3_free(zErrMsg);
     }
     else {
-        fprintf(stdout, "Operation done successfully\n");
+       // fprintf(stdout, "Operation done successfully\n");
     }
 
     return last_positions_ril;
@@ -446,7 +446,7 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
             clog << "SQL error in Query count_rilevazioni_pub: " << zErrMsg << endl;
             sqlite3_free(zErrMsg);
         } else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
+         //   clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
         }
     }
 
