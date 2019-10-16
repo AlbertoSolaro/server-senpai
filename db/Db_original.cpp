@@ -32,6 +32,7 @@ using namespace std;
 
 Db_original::Db_original() {
     sqlite3_open("Progetto_malnati.db", &db);
+
 }
 
 map<mac_time, set<schema_original>>  Db_original::dati_scheda;
@@ -58,12 +59,12 @@ int Db_original::callback(void *data, int argc, char **argv, char **azColName) {
         dati_scheda.insert(pair<mac_time,set<schema_original>>(key,v));
     }
 
-    // da eliminare, comodo per debug iniziale
+    /*// da eliminare, comodo per debug iniziale
     for (i = 0; i < argc; i++) {
         printf("%s = %s\n", azColName[i], argv[i] ? argv[i] : "NULL");
     }
     printf("\n");
-
+*/
     return 0;
 }
 
@@ -97,25 +98,25 @@ void Db_original::loop(time_t timestamp)  {
     sql = "SELECT * FROM Originale where TIMESTAMP >='"+timestamp_in_s+"' AND TIMESTAMP <'" + timestamp_fin_s+"'";
 
     /* Execute SQL statement */
-    char *zErrMsg = nullptr;
+    //char *zErrMsg = nullptr;
     int rc;
     const char* data = "Callback function called";
 
-    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
+    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data,NULL); //per oni record ritornato dalla query chiamo la callback
 
     if (rc != SQLITE_OK) {
-        fprintf(stderr, "SQL error: %s\n", zErrMsg);
+        //fprintf(stderr, "SQL error: %s\n", zErrMsg);
         qDebug()<< "ERROR select from Originale: "<< sqlite3_errmsg(db);
 
-        sqlite3_free(zErrMsg);
+       // sqlite3_free(zErrMsg);
     } else {
-        fprintf(stdout, "Operation done successfully\n");
+        //fprintf(stdout, "Operation done successfully\n");
     }
 
     //creo una mappa con MAC->TIMESTAMP in cui salvo solo le rilevazioni ricevute da N_schede e mantenendo solo l'ultima rilevazione
     map<string, string> last_mac;
     for (map<mac_time, set<schema_original>>::iterator it = dati_scheda.begin(); it != dati_scheda.end(); ++it) {
-        if ((it->second).size() == N_schede)
+        if ((it->second).size() == /*triang.n_schede */ N_schede)
         {
             map<string, string>::iterator selected = last_mac.find(string((it->first).MAC));
             if (selected == last_mac.end()) {
@@ -157,7 +158,7 @@ void Db_original::loop(time_t timestamp)  {
         rc = sqlite3_step(stmt);
         if (rc != SQLITE_DONE) {
             qDebug()<< "ERROR inserting data: "<< sqlite3_errmsg(db);
-            printf("ERROR inserting data: %s\n", sqlite3_errmsg(db));
+           // printf("ERROR inserting data: %s\n", sqlite3_errmsg(db));
 
         }
 
@@ -255,7 +256,7 @@ map<string,num_ril> Db_original::number_of_rilevations(time_t timestamp_start, t
             sqlite3_free(zErrMsg);
         }
         else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" <<endl;
+          //  clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" <<endl;
         }
 
         sql = "SELECT COUNT(*) FROM History where ISPUB=0 AND TIMESTAMP >='" + timestamp_in_s + "' AND TIMESTAMP <'" + timestamp_fin_s + "' GROUP BY MAC HAVING COUNT(DISTINCT TIMESTAMP)>=" + to_string(N_rilevazioni);
@@ -266,12 +267,10 @@ map<string,num_ril> Db_original::number_of_rilevations(time_t timestamp_start, t
             clog << "SQL error in Query count_rilevazioni_no_pub : " << zErrMsg << endl;
             sqlite3_free(zErrMsg);
         } else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
+          //  clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
         }
     }
-    for(map<string,num_ril>::iterator it=count_ril.begin();it!=count_ril.end();++it)
-        qDebug()<<it->first.c_str()<< " "<< it->second.n_pub<<" - "<<it->second.n_priv;
-    return count_ril;
+     return count_ril;
 
 }
 
@@ -328,7 +327,7 @@ vector<schema_triang> Db_original::last_positions(time_t timestamp) {
         sqlite3_free(zErrMsg);
     }
     else {
-        fprintf(stdout, "Operation done successfully\n");
+       // fprintf(stdout, "Operation done successfully\n");
     }
 
     return last_positions_ril;
@@ -447,7 +446,7 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
             clog << "SQL error in Query count_rilevazioni_pub: " << zErrMsg << endl;
             sqlite3_free(zErrMsg);
         } else {
-            clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
+         //   clog << "Query count_rilevazioni_pub tra " << timestamp_in_s << " and " << timestamp_fin_s << " effettuata correttamente" << endl;
         }
     }
 

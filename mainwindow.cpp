@@ -7,14 +7,15 @@
 #include <ctime>
 
 
+
 void MainWindow::MqttStart(){
     QString program = "python mqtt.py";
     qDebug() << "Start python";
     this->mqtt.startDetached(program);
     //this->mqtt.
 }
-void show_history_plot(QLabel* histLabel, QChartView *histChartViewBar,QDateTimeEdit *histDateEdit) {
-Db_original db;
+void show_history_plot(QLabel* histLabel, QChartView *histChartViewBar,QDateTimeEdit *histDateEdit,Db_original *db) {
+
 QDateTime temp=histDateEdit->dateTime();
 QString dateText = QString("Date selected: %1").arg(temp.toString("d/M/yyyy"));
 histLabel->setText(dateText);
@@ -29,7 +30,7 @@ time_t histEnd;
 histStart = temp.toTime_t();
 histEnd = temp.addSecs(1800).toTime_t();
 
-histMap = db.number_of_rilevations(histStart, histEnd);
+histMap = db->number_of_rilevations(histStart, histEnd);
 for(map<string,num_ril>::iterator it=histMap.begin();it!=histMap.end();++it)
     qDebug()<<it->first.c_str()<< " "<< it->second.n_pub<<" - "<<it->second.n_priv;
 
@@ -110,11 +111,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     db->triang.initTriang(roots);
 
-    int n_sec=30;
-    this->timer->setInterval(n_sec*1000);
+    int n_sec_history=30;
+    this->timer->setInterval(n_sec_history*1000);
 
     connect(this->timer, &QTimer::timeout,this, [db]() {
-        db->triang=Triangulation();
         time_t timev;
         time(&timev);
         db->loop(timev);});
@@ -211,11 +211,10 @@ MainWindow::MainWindow(QWidget *parent)
     graphicsViewScatter->setRenderHint(QPainter::Antialiasing);
 
 
+    int n_sec_last=30;
+    this->mapTimer->setInterval(n_sec_last*1000);
 
-    this->mapTimer->setInterval(n_sec*1000);
-
-    connect(this->mapTimer, &QTimer::timeout,this, [boardScatter,graphicsViewScatter]() {
-        Db_original db;
+    connect(this->mapTimer, &QTimer::timeout,this, [boardScatter,graphicsViewScatter,db]() {
         vector<QScatterSeries*> vSeries;
 
 
@@ -226,7 +225,7 @@ MainWindow::MainWindow(QWidget *parent)
 
         // Usare timev invece di ctime
 
-        vlast = db.last_positions(timev);
+        vlast = db->last_positions(timev);
 
         for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){
             QScatterSeries *phoneScatter = new QScatterSeries();
@@ -315,8 +314,6 @@ MainWindow::MainWindow(QWidget *parent)
     histEnd = histDateEdit->dateTime().toTime_t();
 
     histMap = db->number_of_rilevations(histStart, histEnd);
-    for(map<string,num_ril>::iterator it=histMap.begin();it!=histMap.end();++it)
-        qDebug()<<it->first.c_str()<< " "<< it->second.n_pub<<" - "<<it->second.n_priv;
 
     for(map<string,num_ril>::iterator itMap=histMap.begin(); itMap!=histMap.end();++itMap){
        *set0hist << itMap->second.n_priv;
@@ -354,15 +351,15 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Update chart with enter press
-    connect(histDateEdit, &QAbstractSpinBox::editingFinished, this, [histLabel, histChartViewBar,histDateEdit] (){
+    connect(histDateEdit, &QAbstractSpinBox::editingFinished, this, [histLabel, histChartViewBar,histDateEdit,db] (){
 
-        show_history_plot(histLabel, histChartViewBar,histDateEdit);
+        show_history_plot(histLabel, histChartViewBar,histDateEdit,db);
     });
 
     // Update chart with update function
-    connect(update_button, &QPushButton::clicked, this, [histLabel, histChartViewBar,histDateEdit] (){
+    connect(update_button, &QPushButton::clicked, this, [histLabel, histChartViewBar,histDateEdit,db] (){
 
-        show_history_plot(histLabel, histChartViewBar,histDateEdit);
+        show_history_plot(histLabel, histChartViewBar,histDateEdit,db);
     });
 
     QHBoxLayout *changeDataLayout= new QHBoxLayout;
