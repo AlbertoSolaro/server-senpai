@@ -13,17 +13,22 @@ using namespace std;
 class Triangulation {
   static map<string, Point> roots;
   static vector<Distance> distances;
-  static  int measure_power; //potenza misurata a un metro di distanza
+  static int measure_power; //potenza misurata a un metro di distanza
   static float constant_envir; //constante ambientale(da 2 a 4)
+  static int nschede;
 public:
   Triangulation();
-  static void initTriang(map<string, Point> vector_dati);
-  static Point triangolate(vector<schema_original>);
+  static void initTriang(map<string, Point> vector_dati, int, float, int);
+  static Point triangolate(vector<schema_original>, int);
+
   static float rssi2meter(int rssi);
   static vector<Point> findPoints(Distance, map<string, float>);
   static Point findTruePoint(vector<Point>);
   static map<string, Point> getRoots() { return roots; }
   static void setRoots(map<string,Point> r) { roots = r; }
+  static void setMeasuredPower(int m){measure_power=m;}
+  static void setConstantEnvir(float e){constant_envir=e;}
+  static void setNschede(int n){nschede=n;}
   static vector<Distance> getDistances() { return distances; }
   static void setDistances(vector<Distance> d) { distances = d; }
 };

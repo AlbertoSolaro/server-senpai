@@ -12,8 +12,10 @@ Triangulation::Triangulation(){}
 
 map<string, Point> Triangulation::roots;
 vector<Distance> Triangulation::distances;
-int Triangulation::measure_power=-43; //-69;
-float Triangulation::constant_envir=2.25;
+
+int Triangulation::measure_power;
+float Triangulation::constant_envir;
+int Triangulation::nschede;
 float distance(Point point1, Point point2){
   return sqrt(pow(point1.x - point2.x, 2) +pow(point1.y - point2.y, 2) * 1.0);
 }
@@ -29,8 +31,11 @@ void kLargest(Column* arr, int k) {
 	  arr->topk.push_back(next(setOfWords.begin(),i)->first);
 }
 
-void Triangulation::initTriang(map<string, Point> r) {
+void Triangulation::initTriang(map<string, Point> r, int measured_power, float enviromental_constant, int nschede) {
   Triangulation::setRoots(r);
+  Triangulation::setConstantEnvir(enviromental_constant);
+  Triangulation::setMeasuredPower(measured_power);
+  Triangulation::setNschede(nschede);
   //auto distances = getDistances();
 
 

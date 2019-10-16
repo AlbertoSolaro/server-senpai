@@ -3,6 +3,12 @@
 
 #include <QMainWindow>
 #include <QProcess>
+#include <QLineEdit>
+#include <QTextEdit>
+#include <QSpinBox>
+#include <string>
+#include <map>
+#include "schema/helperclass.h"
 #include "db/triangulation.h"
 
 QT_BEGIN_NAMESPACE
@@ -20,10 +26,17 @@ public:
     ~MainWindow();
 
 public slots:
-    void closing();    
+    void closing();
 
 private:
     Triangulation triang;
+    int n_roots;
+    float env_const;
+    int measured_power;
+    bool triang_started;
+    map<string, Point> roots;
+    void InsertButtonClicked(QSpinBox*, QLineEdit*, QLineEdit*, QLineEdit*, QTextEdit*);
+    void CheckNRoots(QSpinBox*);
     void MqttStart();
     void DB();    
     Ui::MainWindow *ui;

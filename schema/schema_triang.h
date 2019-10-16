@@ -3,9 +3,9 @@
 class schema_triang {
 public:
 	int ID;
-	char MAC[20];
+    char MAC[20];
 	bool isPub;
-	char timestamp[20];
+    char timestamp[20];
     float x;
     float y;
 
