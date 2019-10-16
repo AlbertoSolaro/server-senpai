@@ -177,7 +177,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // SETTINGS TAB
 
-    this->n_roots=0;
+    this->n_roots=3;
+    Point a(0.0,0.0), b(0.0,5.0), c(5.0,0.0);
+    this->roots.insert(pair<string,Point>("30:AE:A4:1D:52:BC",a));
+    this->roots.insert(pair<string,Point>("30:AE:A4:75:23:E8",b));
+    this->roots.insert(pair<string,Point>("A4:CF:12:55:88:F0",c));
 
     QGroupBox *NDevicesGroup=new QGroupBox();
 
@@ -185,7 +189,7 @@ MainWindow::MainWindow(QWidget *parent)
     QSpinBox *integerSpinBox = new QSpinBox;
     integerSpinBox->setRange(2, numeric_limits<int>::max());
     integerSpinBox->setSingleStep(1);
-    integerSpinBox->setValue(0);
+    integerSpinBox->setValue(3);
     connect(integerSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, [this, integerSpinBox](){CheckNRoots(integerSpinBox);});
 
     QTextEdit *DevicesList=new QTextEdit();
@@ -194,6 +198,10 @@ MainWindow::MainWindow(QWidget *parent)
     QGridLayout *NDevicesLayout=new QGridLayout();
     NDevicesLayout->addWidget(DevicesList, 0, 0);
     NDevicesGroup->setLayout(NDevicesLayout);
+
+    for(map<string,Point>::iterator it=this->roots.begin(); it!=this->roots.end(); it++){
+        DevicesList->append(QString::fromStdString(it->first+" "+to_string(it->second.x)+" "+to_string(it->second.y)));
+    }
 
 
     QGroupBox *InsertGroup=new QGroupBox();
@@ -205,9 +213,9 @@ MainWindow::MainWindow(QWidget *parent)
     QGroupBox *YGroup=new QGroupBox(tr("Y"));
     QLineEdit *YEdit=new QLineEdit();
     QGroupBox *MPGroup=new QGroupBox(tr("Measured power"));
-    QLineEdit *MPEdit=new QLineEdit();
+    QLineEdit *MPEdit=new QLineEdit(tr("-69"));
     QGroupBox *ENGroup=new QGroupBox(tr("Enviromental constant"));
-    QLineEdit *ENEdit=new QLineEdit();
+    QLineEdit *ENEdit=new QLineEdit(tr("2.25"));
 
     QGridLayout *MACLayout=new QGridLayout;
     MACLayout->addWidget(MACEdit, 1, 0, 1, 2);
