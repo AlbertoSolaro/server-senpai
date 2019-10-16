@@ -141,8 +141,7 @@ MainWindow::MainWindow(QWidget *parent)
     this->triang_started=false;
     this->timer = new QTimer(this);
     this->mapTimer = new QTimer(this);
-    Db_original db;
-    int n_sec=1;
+    Db_original* db = new Db_original();
 
 
 /*
@@ -253,7 +252,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
-    connect(StartButton, &QPushButton::released, this, [this, n_sec, integerSpinBox, StartButton](){
+    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,db](){
         if(this->triang_started){
             delete timer;
             this->mqtt.kill();
@@ -272,24 +271,23 @@ MainWindow::MainWindow(QWidget *parent)
         MqttStart();
 
         // Start DB
-        Db_original db;
-        db.triang=Triangulation();
+        db->triang=Triangulation();
         // Init triangulation
         // TODO - read configuration
         //Point root1(0.0, 0.0), root2(0.8,0.0); //root3(0.0,5.0);
         //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("a",root3);
         //this->roots = { a,b};
 
-        db.triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
+        db->triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
 
         this->triang_started=true;
         StartButton->setText("STOP TRIANGULATION");
-
-        this->timer->setInterval(n_sec*1000);
-        connect(this->timer, &QTimer::timeout,this, []() {
-            Db_original db;
-            db.triang=Triangulation();
-            db.loop(CTime(2019, 10, 4, 13, 30, 00).GetTime());});
+        int n_sec_history=30;
+        this->timer->setInterval(n_sec_history*1000);
+        connect(this->timer, &QTimer::timeout,this, [db]() {
+            time_t timev;
+            time(&timev);
+            db->loop(timev);});
         this->timer->start();
     });
 
@@ -398,7 +396,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     vlast = db->last_positions(timev);
 
-    for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){        
+    for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){
         QScatterSeries *phoneScatter = new QScatterSeries();
         phoneScatter->setPointLabelsVisible(false);
         connect(phoneScatter,&QXYSeries::hovered,this,[phoneScatter] (const QPointF &waste, bool check) {
