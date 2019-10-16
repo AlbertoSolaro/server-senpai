@@ -131,7 +131,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    // Create your time series
+   /* // Create your time series
     QScatterSeries *boardScatter = new QScatterSeries();
     boardScatter->setName("Boards");
 
@@ -148,9 +148,43 @@ MainWindow::MainWindow(QWidget *parent)
     boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
     boardScatter->setMarkerSize(15.0);
 
-    *boardScatter<<QPointF(3,4);
+    *boardScatter<<QPointF(3,4);*/
 
     vector<QScatterSeries*> vSeries;
+    vector<QScatterSeries*> vBoards;
+    float xMax=0, xMin=0, yMax=0, yMin=0;
+    for(map<string, Point>::iterator it2=roots.begin(); it2!=roots.end(); ++it2) {
+            QScatterSeries *boardScatter = new QScatterSeries();
+            boardScatter->setPointLabelsVisible(false);
+            connect(boardScatter,&QXYSeries::hovered,this,[boardScatter] (const QPointF &waste, bool check) {
+                if(check == true){
+                    boardScatter->setPointLabelsVisible(true);
+                }
+                else {
+                    boardScatter->setPointLabelsVisible(false);
+                }
+            });
+            boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+            boardScatter->setMarkerSize(20.0);
+            boardScatter->setColor("blue");
+            QString boardLabel = it2->first.c_str();
+            //boardLabel.append("\n test");
+            boardScatter->setPointLabelsFormat(boardLabel);
+            *boardScatter<<QPointF(it2->second.x,it2->second.y);
+            if(xMax<it2->second.x) {
+                xMax = it2->second.x;
+            }
+            if(yMax<it2->second.y) {
+                yMax = it2->second.y;
+            }
+            if(xMin>it2->second.x) {
+                xMin = it2->second.x;
+            }
+            if(yMin>it2->second.y) {
+                yMin = it2->second.y;
+            }
+            vBoards.push_back(boardScatter);
+        }
 
 
     time_t timev;
@@ -177,6 +211,18 @@ MainWindow::MainWindow(QWidget *parent)
         phoneScatter->setMarkerSize(10.0);
         phoneScatter->setPointLabelsFormat(it->MAC);
         *phoneScatter<<QPointF(it->x,it->y);
+        if(xMax<it->x) {
+                    xMax = it->x;
+                }
+                if(yMax<it->y) {
+                    yMax = it->y;
+                }
+                if(xMin>it->x) {
+                    xMin = it->x;
+                }
+                if(yMin>it->y) {
+                    yMin = it->y;
+                }
         vSeries.push_back(phoneScatter);
 
     }
@@ -184,16 +230,26 @@ MainWindow::MainWindow(QWidget *parent)
 
     // Configure your chart
     QChart *chartScatter = new QChart();
-    chartScatter->addSeries(boardScatter);
-
     QValueAxis *axisYmap = new QValueAxis();
-    axisYmap->setRange(-5, 5);
-    chartScatter->addAxis(axisYmap, Qt::AlignLeft);
-    boardScatter->attachAxis(axisYmap);
-    QValueAxis *axisXmap = new QValueAxis();
-    axisXmap->setRange(-5, 5);
-    chartScatter->addAxis(axisXmap, Qt::AlignBottom);
-    boardScatter->attachAxis(axisXmap);
+       yMax += 5;
+       yMin -= 5;
+       axisYmap->setRange(yMin, yMax);
+
+
+       chartScatter->addAxis(axisYmap, Qt::AlignLeft);
+       QValueAxis *axisXmap = new QValueAxis();
+
+       xMax += 5;
+       xMin -= 5;
+       axisXmap->setRange(xMin, xMax);
+
+       chartScatter->addAxis(axisXmap, Qt::AlignBottom);
+
+       for(int i = 0; i < vBoards.size(); i++){
+           chartScatter->addSeries(vBoards.at(i));
+           vBoards.at(i)->attachAxis(axisYmap);
+           vBoards.at(i)->attachAxis(axisXmap);
+       }
 
     for(int i = 0; i < vSeries.size(); i++){
         chartScatter->addSeries(vSeries.at(i));
@@ -214,13 +270,14 @@ MainWindow::MainWindow(QWidget *parent)
     int n_sec_last=30;
     this->mapTimer->setInterval(n_sec_last*1000);
 
-    connect(this->mapTimer, &QTimer::timeout,this, [boardScatter,graphicsViewScatter,db]() {
+    connect(this->mapTimer, &QTimer::timeout,this, [xMax,xMin,yMax,yMin,vBoards,graphicsViewScatter,db]() {
         vector<QScatterSeries*> vSeries;
 
 
         time_t timev;
         time(&timev);
         vector<schema_triang> vlast;
+        float xMax2=xMax-5, xMin2=xMin+5, yMax2=yMax-5, yMin2=yMin+5;
 
 
         // Usare timev invece di ctime
@@ -242,21 +299,44 @@ MainWindow::MainWindow(QWidget *parent)
             phoneScatter->setMarkerSize(10.0);
             phoneScatter->setPointLabelsFormat(it->MAC);
             *phoneScatter<<QPointF(it->x,it->y);
+            if(xMax2<it->x) {
+                            xMax2 = it->x;
+                        }
+                        if(yMax2<it->y) {
+                            yMax2 = it->y;
+                        }
+                        if(xMin2>it->x) {
+                            xMin2 = it->x;
+                        }
+                        if(yMin2>it->y) {
+                            yMin2 = it->y;
+                        }
             vSeries.push_back(phoneScatter);
         }
 
 
         // Configure your chart
         QChart *chartScatter = new QChart();
-        chartScatter->addSeries(boardScatter);
         QValueAxis *axisYmap = new QValueAxis();
-        axisYmap->setRange(-5, 5);
-        chartScatter->addAxis(axisYmap, Qt::AlignLeft);
-        boardScatter->attachAxis(axisYmap);
-        QValueAxis *axisXmap = new QValueAxis();
-        axisXmap->setRange(-5, 5);
-        chartScatter->addAxis(axisXmap, Qt::AlignBottom);
-        boardScatter->attachAxis(axisXmap);
+
+                yMax2 += 5;
+                yMin2 -= 5;
+                axisYmap->setRange(yMin2, yMax2);
+
+                chartScatter->addAxis(axisYmap, Qt::AlignLeft);
+                QValueAxis *axisXmap = new QValueAxis();
+
+                xMax2 += 5;
+                xMin2 -= 5;
+                axisXmap->setRange(xMin2, xMax2);
+
+                chartScatter->addAxis(axisXmap, Qt::AlignBottom);
+
+                for(int i = 0; i < vBoards.size(); i++){
+                    chartScatter->addSeries(vBoards.at(i));
+                    vBoards.at(i)->attachAxis(axisYmap);
+                    vBoards.at(i)->attachAxis(axisXmap);
+                }
 
         for(int i = 0; i < vSeries.size(); i++){
             chartScatter->addSeries(vSeries.at(i));
