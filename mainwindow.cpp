@@ -5,6 +5,7 @@
 #include <db/Db_original.h>
 #include <atltime.h>
 #include <ctime>
+#include <regex>
 
 
 void MainWindow::MqttStart(){
@@ -30,16 +31,64 @@ void MainWindow::closing(){
     this->mqtt.kill();
 }
 
+void MainWindow::InsertButtonClicked(QSpinBox* integerSpinBox, QLineEdit *MACEdit, QLineEdit *XEdit, QLineEdit *YEdit, QTextEdit* DevicesList){
+    //DevicesList->clear();
+    if(this->n_roots==integerSpinBox->value()){
+        QMessageBox msgbox;
+        msgbox.setText("Max roots reached");
+        msgbox.exec();
+        return;
+    }
+    if(!regex_match(MACEdit->text().toStdString(),regex("^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$"))){
+        QMessageBox msgbox;
+        msgbox.setText("Enter valid MAC address");
+        msgbox.exec();
+        return;
+    }
+    if(!regex_match(XEdit->text().toStdString(),regex("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"))
+            ||!regex_match(YEdit->text().toStdString(),regex("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"))){
+        QMessageBox msgbox;
+        msgbox.setText("Enter valid coordinates");
+        msgbox.exec();
+        return;
+    }
+    Point point=Point(XEdit->text().toFloat(), YEdit->text().toFloat());
+    pair<string,Point> pair(MACEdit->text().toStdString(),point);
+    this->roots.insert(pair);
+    n_roots++;
+    DevicesList->append(MACEdit->text()+" "+XEdit->text()+" "+YEdit->text());
+
+}
+
+void MainWindow::CheckNRoots(QSpinBox* integerSpinBox){
+    if(this->triang_started){
+        QMessageBox msgbox;
+        msgbox.setText("Can't change n. of roots while triangulation is not stopped.");
+        msgbox.exec();
+        integerSpinBox->setValue(this->n_roots);
+        return;
+    }
+    if(this->n_roots>integerSpinBox->value()){
+        QMessageBox msgbox;
+        msgbox.setText("Can't lower the number of roots without removing them");
+        msgbox.exec();
+        integerSpinBox->setValue(this->n_roots);
+        return;
+    }
+}
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
+    this->triang_started=false;
     this->timer = new QTimer(this);
     this->mapTimer = new QTimer(this);
+    Db_original db;
+    int n_sec=1;
 
 
-
+/*
     // Start MQTT
     MqttStart();
 
@@ -61,12 +110,165 @@ MainWindow::MainWindow(QWidget *parent)
         db.triang=Triangulation();
         db.loop(CTime(2019, 10, 4, 13, 30, 00).GetTime());});
     this->timer->start();
+    */
 
     //---------------------
     // Create Main Window
     //---------------------
 
     ui->setupUi(this);
+
+    // SETTINGS TAB
+
+    this->n_roots=0;
+
+    QGroupBox *NDevicesGroup=new QGroupBox();
+
+    QLabel *NLabel=new QLabel("Number of devices: ");
+    QSpinBox *integerSpinBox = new QSpinBox;
+    integerSpinBox->setRange(2, numeric_limits<int>::max());
+    integerSpinBox->setSingleStep(1);
+    integerSpinBox->setValue(0);
+    connect(integerSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, [this, integerSpinBox](){CheckNRoots(integerSpinBox);});
+
+    QTextEdit *DevicesList=new QTextEdit();
+    //DevicesList->setText("No devices inserted yet.");
+
+    QGridLayout *NDevicesLayout=new QGridLayout();
+    NDevicesLayout->addWidget(DevicesList, 0, 0);
+    NDevicesGroup->setLayout(NDevicesLayout);
+
+
+    QGroupBox *InsertGroup=new QGroupBox();
+
+    QGroupBox *MACGroup=new QGroupBox(tr("MAC"));
+    QLineEdit *MACEdit=new QLineEdit();
+    QGroupBox *XGroup=new QGroupBox(tr("X"));
+    QLineEdit *XEdit=new QLineEdit();
+    QGroupBox *YGroup=new QGroupBox(tr("Y"));
+    QLineEdit *YEdit=new QLineEdit();
+    QGroupBox *MPGroup=new QGroupBox(tr("Measured power"));
+    QLineEdit *MPEdit=new QLineEdit();
+    QGroupBox *ENGroup=new QGroupBox(tr("Enviromental constant"));
+    QLineEdit *ENEdit=new QLineEdit();
+
+    QGridLayout *MACLayout=new QGridLayout;
+    MACLayout->addWidget(MACEdit, 1, 0, 1, 2);
+    MACGroup->setLayout(MACLayout);
+    QGridLayout *XLayout=new QGridLayout;
+    XLayout->addWidget(XEdit, 1, 0, 1, 2);
+    XGroup->setLayout(XLayout);
+    QGridLayout *YLayout=new QGridLayout;
+    YLayout->addWidget(YEdit, 1, 0, 1, 2);
+    YGroup->setLayout(YLayout);
+    QGridLayout *MPLayout=new QGridLayout;
+    MPLayout->addWidget(MPEdit, 1, 0, 1, 2);
+    MPGroup->setLayout(MPLayout);
+    QGridLayout *ENLayout=new QGridLayout;
+    ENLayout->addWidget(ENEdit, 1, 0, 1, 2);
+    ENGroup->setLayout(ENLayout);
+
+    QPushButton *InsertButton=new QPushButton("Insert root", this);
+    connect(InsertButton, &QPushButton::released, this, [integerSpinBox, MACEdit, XEdit, YEdit, DevicesList, this](){InsertButtonClicked(integerSpinBox, MACEdit, XEdit, YEdit, DevicesList);});
+
+
+
+    QPushButton *ChangeButton=new QPushButton("Set constants", this);
+    connect(ChangeButton, &QPushButton::released, this, [ENEdit, MPEdit, DevicesList, this](){
+        if(MPEdit->text().toInt()>0||
+                !regex_match(MPEdit->text().toStdString(),regex("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"))){
+            QMessageBox msgbox;
+            msgbox.setText("Measured power can only be a negative integer.");
+            msgbox.exec();
+            return;
+        }
+        if(ENEdit->text().toFloat()<2||ENEdit->text().toFloat()>4){
+            QMessageBox msgbox;
+            msgbox.setText("Enviromental constant should be between 2 and 4");
+            msgbox.exec();
+            return;
+        }
+        this->measured_power=MPEdit->text().toInt();
+        this->env_const=ENEdit->text().toFloat();
+        DevicesList->append(QString::fromStdString("Constants changed: measured power is "+to_string(this->measured_power)+" and enviromental constant is "+to_string(this->env_const)));
+
+    });
+
+    QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
+    connect(StartButton, &QPushButton::released, this, [this, n_sec, integerSpinBox, StartButton](){
+        if(this->triang_started){
+            delete timer;
+            this->mqtt.kill();
+            this->timer = new QTimer(this);
+            this->triang_started=false;
+            StartButton->setText("START TRIANGULATION");
+            return;
+        }
+        if(this->n_roots!=integerSpinBox->value()){
+            QMessageBox msgbox;
+            msgbox.setText("Number of roots is not the same as declared.");
+            msgbox.exec();
+            return;
+        }
+        // Start MQTT
+        MqttStart();
+
+        // Start DB
+        Db_original db;
+        db.triang=Triangulation();
+        // Init triangulation
+        // TODO - read configuration
+        //Point root1(0.0, 0.0), root2(0.8,0.0); //root3(0.0,5.0);
+        //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("a",root3);
+        //this->roots = { a,b};
+
+        db.triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
+
+        this->triang_started=true;
+        StartButton->setText("STOP TRIANGULATION");
+
+        this->timer->setInterval(n_sec*1000);
+        connect(this->timer, &QTimer::timeout,this, []() {
+            Db_original db;
+            db.triang=Triangulation();
+            db.loop(CTime(2019, 10, 4, 13, 30, 00).GetTime());});
+        this->timer->start();
+    });
+
+    QPushButton *RemoveButton=new QPushButton("Remove roots", this);
+    connect(RemoveButton, &QPushButton::released, this, [DevicesList, this, StartButton](){
+        DevicesList->clear();
+        this->roots.clear();
+        this->n_roots=0;
+        if(this->triang_started){
+            delete timer;
+            this->mqtt.kill();
+            this->timer = new QTimer(this);
+            this->triang_started=false;
+            StartButton->setText("START TRIANGULATION");
+        }
+    });
+
+    QGridLayout *InsertLayout=new QGridLayout;
+    InsertLayout->addWidget(integerSpinBox, 0, 1);
+    InsertLayout->addWidget(NLabel, 0, 0);
+    InsertLayout->addWidget(MACGroup, 1, 0);
+    InsertLayout->addWidget(XGroup, 1, 1);
+    InsertLayout->addWidget(YGroup, 1, 2);
+    InsertLayout->addWidget(MPGroup, 2, 0);
+    InsertLayout->addWidget(ENGroup, 2, 1);
+    InsertLayout->addWidget(StartButton, 2, 2);
+    InsertLayout->addWidget(InsertButton, 3, 0);
+    InsertLayout->addWidget(RemoveButton, 3, 1);
+    InsertLayout->addWidget(ChangeButton, 3, 2);
+    InsertGroup->setLayout(InsertLayout);
+
+
+    QVBoxLayout *settingsLayout=new QVBoxLayout();
+    settingsLayout->addWidget(InsertGroup);
+    settingsLayout->addWidget(NDevicesGroup);
+    QWidget *settingsWidget = new QWidget;
+    settingsWidget->setLayout(settingsLayout);
 
 
     // MAP TAB
@@ -456,6 +658,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     auto tw = new QTabWidget (this);
+    tw->addTab(settingsWidget, "Settings");
     tw->addTab(graphicsViewScatter, "Map");
     tw->addTab(histWidget, "History");
     tw->addTab(statsWidget, "Stats");
