@@ -3,6 +3,23 @@ import paho.mqtt.client as mqtt
 import ssl, random, string
 import json
 import os
+import sys
+import msvcrt
+
+lock_filename = 'sample-locking.lock'
+fh = open(lock_filename, "w")
+
+try:
+    print("Not lock yet")
+    msvcrt.locking(fh.fileno(), msvcrt.LK_RLCK, len("LOCK!"))
+    print("LOCK!")
+except IOError as e:
+    sys.exit(-1)
+except OSError as o:
+    sys.exit(-2)
+
+
+#msvcrt.locking(fh.fileno(), msvcrt.LK_UNLCK, len("LOCK!"))
 
 from configfile import mqttobj
 mqtt_config = mqttobj()

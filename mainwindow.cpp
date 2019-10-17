@@ -6,6 +6,7 @@
 #include <atltime.h>
 #include <ctime>
 #include <regex>
+#include <QtGlobal>
 
 
 
@@ -443,7 +444,7 @@ MainWindow::MainWindow(QWidget *parent)
     integerSpinBox->setRange(2, numeric_limits<int>::max());
     integerSpinBox->setSingleStep(1);
     integerSpinBox->setValue(3);
-    connect(integerSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, [this, integerSpinBox](){CheckNRoots(integerSpinBox);});
+    connect(integerSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, [this, integerSpinBox](){CheckNRoots(integerSpinBox);});
 
     QTextEdit *DevicesList=new QTextEdit();
     //DevicesList->setText("No devices inserted yet.");
@@ -746,8 +747,8 @@ MainWindow::MainWindow(QWidget *parent)
     time_t statsStart;
 
     statsStart = statsDateEdit->dateTime().addSecs(-7200).toTime_t();
-    QDateTime r = QDateTime::fromTime_t(statsStart);
-    statsDateEdit->setDateTime(r);
+   // QDateTime r = QDateTime::fromTime_t(statsStart);
+   // statsDateEdit->setDateTime(r);
 
     bestStat = db->statistics_fun(statsStart,1);
 
