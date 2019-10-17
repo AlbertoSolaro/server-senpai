@@ -13,11 +13,12 @@ using namespace std;
 class Triangulation {
   static map<string, Point> roots;
   static vector<Distance> distances;
-  static int measure_power; //potenza misurata a un metro di distanza
-  static float constant_envir; //constante ambientale(da 2 a 4)
 
 public:
    static int nschede;
+   static int measure_power; //potenza misurata a un metro di distanza
+   static float constant_envir; //constante ambientale(da 2 a 4)
+
   Triangulation();
   static void initTriang(map<string, Point> vector_dati, int, float, int);
   static Point triangolate(vector<schema_original>);

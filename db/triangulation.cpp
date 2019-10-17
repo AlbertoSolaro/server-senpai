@@ -36,6 +36,10 @@ void Triangulation::initTriang(map<string, Point> r, int measured_power, float e
   Triangulation::setConstantEnvir(enviromental_constant);
   Triangulation::setMeasuredPower(measured_power);
   Triangulation::setNschede(nschede);
+  qDebug()<<"measure_power="<< measure_power;
+  qDebug()<<"constant_envir="<<constant_envir;
+
+
   //auto distances = getDistances();
 
 
@@ -68,6 +72,9 @@ Point Triangulation::triangolate(vector<schema_original> vector_dati) {
     qDebug()<<"Distance between "<<it->mac1.c_str()<<" and "<<it->mac2.c_str()<<": "<<it->distance;
   map<string, float> dists;
   vector<Point> allpoints;
+
+  qDebug()<<"measure_power="<< measure_power;
+  qDebug()<<"constant_envir="<<constant_envir;
 
   for(auto v : vector_dati){
     dists.insert(pair<string, float>(v.root, Triangulation::rssi2meter(v.RSSI)));

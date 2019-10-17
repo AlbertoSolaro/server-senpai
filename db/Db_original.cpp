@@ -260,7 +260,7 @@ void Db_original::loop1(time_t timestamp)  {
     int rc;
     const char* data = "Callback function called";
 
-    rc = sqlite3_exec(db, sql.c_str(), callback, (void*)data,NULL); //per oni record ritornato dalla query chiamo la callback
+    rc = sqlite3_exec(db, sql.c_str(), callback1, (void*)data,NULL); //per oni record ritornato dalla query chiamo la callback
 
     if (rc != SQLITE_OK) {
         //fprintf(stderr, "SQL error: %s\n", zErrMsg);
@@ -275,9 +275,10 @@ void Db_original::loop1(time_t timestamp)  {
     for(map<string,map<string,set<schema_original>>>::iterator it=rilevazioni.begin(); it!=rilevazioni.end();++it)
     {
 
-        auto actual=ril_per_disp.insert(pair<string,vector<schema_original>>(it->first,vector<schema_original>())).first;
         if(it->second.size()==triang.nschede)
         {
+            auto actual=ril_per_disp.insert(pair<string,vector<schema_original>>(it->first,vector<schema_original>())).first;
+
             for(map<string,set<schema_original>>::iterator it2=(it->second).begin();it2!=it->second.end(); ++it2)
             {
             string max="0";
@@ -316,6 +317,9 @@ void Db_original::loop1(time_t timestamp)  {
 
         //per ogni MAC-TIMESTAMP che rispetta la condizione, chiamo la triangolazione passando un vector con i record e il numero di record del vettore(e quindi delle schede)
         //schema_triang dato_triang = triangolazione(vector_dati, N_schede);
+        qDebug()<<"measure_power="<<triang.measure_power;
+        qDebug()<<"constant_envir="<<triang.constant_envir;
+
         Point estimated_point = triang.triangolate(selected->second);
 
         //serve solo per test
@@ -554,7 +558,7 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     int rc;
     //const char* data = "Callback function called";
 
-    count_ril.clear(); //pulisco la mappa che e allocata solo una volta e puo essere stata usata precedentemente
+    stat.clear(); //pulisco la mappa che e allocata solo una volta e puo essere stata usata precedentemente
 
     CTime timestamp_in(timestamp_start);
     CTime timestamp_end;

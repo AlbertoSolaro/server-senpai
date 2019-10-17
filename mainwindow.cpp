@@ -178,7 +178,7 @@ MainWindow::MainWindow(QWidget *parent)
     // SETTINGS TAB
 
     this->n_roots=3;
-    Point a(0.0,0.0), b(0.0,5.0), c(5.0,0.0);
+    Point a(0.0,2.5), b(3.8,0.0), c(0.0,0.0);
     this->roots.insert(pair<string,Point>("30:AE:A4:1D:52:BC",a));
     this->roots.insert(pair<string,Point>("30:AE:A4:75:23:E8",b));
     this->roots.insert(pair<string,Point>("A4:CF:12:55:88:F0",c));
@@ -255,12 +255,15 @@ MainWindow::MainWindow(QWidget *parent)
         }
         this->measured_power=MPEdit->text().toInt();
         this->env_const=ENEdit->text().toFloat();
+        qDebug()<<this->measured_power;
+        qDebug()<<this->env_const;
+
         DevicesList->append(QString::fromStdString("Constants changed: measured power is "+to_string(this->measured_power)+" and enviromental constant is "+to_string(this->env_const)));
 
     });
 
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
-    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,db](){
+    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,db,MPEdit,ENEdit](){
         if(this->triang_started){
             delete timer;
             this->mqtt.kill();
@@ -275,6 +278,9 @@ MainWindow::MainWindow(QWidget *parent)
             msgbox.exec();
             return;
         }
+        this->measured_power=MPEdit->text().toInt();
+        this->env_const=ENEdit->text().toFloat();
+
         // Start MQTT
         MqttStart();
 
@@ -282,8 +288,8 @@ MainWindow::MainWindow(QWidget *parent)
         db->triang=Triangulation();
         // Init triangulation
         // TODO - read configuration
-        //Point root1(0.0, 0.0), root2(0.8,0.0); //root3(0.0,5.0);
-        //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("a",root3);
+        //Point root1(0.0, 2.5), root2(3.8,0.0); //root3(0.0,0.0);
+        //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("A4:CF:12:55:88:F0",root3);
         //this->roots = { a,b};
 
         db->triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
@@ -293,9 +299,12 @@ MainWindow::MainWindow(QWidget *parent)
         int n_sec_history=30;
         this->timer->setInterval(n_sec_history*1000);
         connect(this->timer, &QTimer::timeout,this, [db]() {
-            time_t timev;
+          /*  time_t timev;
             time(&timev);
-            db->loop1(timev);});
+            db->loop1(timev);
+        */
+        db->loop1(CTime(2019,10,16,00,55,00).GetTime());
+        });
         this->timer->start();
     });
 
@@ -321,10 +330,10 @@ MainWindow::MainWindow(QWidget *parent)
     InsertLayout->addWidget(YGroup, 1, 2);
     InsertLayout->addWidget(MPGroup, 2, 0);
     InsertLayout->addWidget(ENGroup, 2, 1);
-    InsertLayout->addWidget(StartButton, 2, 2);
+    InsertLayout->addWidget(StartButton, 3, 2);
     InsertLayout->addWidget(InsertButton, 3, 0);
     InsertLayout->addWidget(RemoveButton, 3, 1);
-    InsertLayout->addWidget(ChangeButton, 3, 2);
+
     InsertGroup->setLayout(InsertLayout);
 
 
