@@ -647,6 +647,15 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     {
         best_macs.insert(pair<string, vector<int>>(it->first, it->second.periodi));
     }
+    if(i==0)
+    {
+        best_k_mac vuoto(mode);
+        return vuoto;
+    }
+    if(i==1)
+    {
+        best_macs.insert(pair<string,vector<int>>("0",vector<int>(etichette_periodo.size(),0)));
+    }
 
     return best_macs;
 }
