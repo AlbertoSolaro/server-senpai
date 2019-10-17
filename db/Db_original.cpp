@@ -377,7 +377,7 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     int rc;
     //const char* data = "Callback function called";
 
-    count_ril.clear(); //pulisco la mappa che e allocata solo una volta e puo essere stata usata precedentemente
+    stat.clear(); //pulisco la mappa che e allocata solo una volta e puo essere stata usata precedentemente
 
     CTime timestamp_in(timestamp_start);
     CTime timestamp_end;
@@ -465,6 +465,15 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     for (i = 0; i < K_BEST && it!=ordered_stat.end(); i++, ++it)
     {
         best_macs.insert(pair<string, vector<int>>(it->first, it->second.periodi));
+    }
+    if(i==0)
+    {
+        best_k_mac vuoto(mode);
+        return vuoto;
+    }
+    if(i==1)
+    {
+        best_macs.insert(pair<string,vector<int>>("0",vector<int>(etichette_periodo.size(),0)));
     }
 
     return best_macs;
