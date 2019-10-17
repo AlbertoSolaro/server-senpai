@@ -16,6 +16,125 @@ void MainWindow::MqttStart(){
     //this->mqtt.
 }
 
+void show_map (MainWindow* mw,QChartView* mapScatter,string mapTitle,map<string, Point> roots,Db_original *db) {
+
+    vector<QScatterSeries*> vSeries;
+    vector<QScatterSeries*> vBoards;
+    float xMax=0, xMin=0;
+    for(map<string, Point>::iterator it2=roots.begin(); it2!=roots.end(); ++it2) {
+            QScatterSeries *boardScatter = new QScatterSeries();
+            boardScatter->setPointLabelsVisible(false);
+            MainWindow::connect(boardScatter,&QXYSeries::hovered,mw,[boardScatter] (const QPointF &waste, bool check) {
+                if(check == true){
+                    boardScatter->setPointLabelsVisible(true);
+                }
+                else {
+                    boardScatter->setPointLabelsVisible(false);
+                }
+            });
+            boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+            boardScatter->setMarkerSize(20.0);
+            boardScatter->setColor("blue");
+            QString boardLabel = it2->first.c_str();
+            //boardLabel.append("\n test");
+            boardScatter->setPointLabelsFormat(boardLabel);
+            *boardScatter<<QPointF(it2->second.x,it2->second.y);
+            if(xMax<it2->second.x) {
+                xMax = it2->second.x;
+            }
+            if(xMax<it2->second.y) {
+                xMax = it2->second.y;
+            }
+            if(xMin>it2->second.x) {
+                xMin = it2->second.x;
+            }
+            if(xMin>it2->second.y) {
+                xMin = it2->second.y;
+            }
+            vBoards.push_back(boardScatter);
+        }
+
+
+    time_t timev;
+    time(&timev);
+    vector<schema_triang> vlast;
+
+    // Usare timev invece di ctime
+
+
+    vlast = db->last_positions(timev);
+
+    for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){
+        QScatterSeries *phoneScatter = new QScatterSeries();
+        phoneScatter->setPointLabelsVisible(false);
+        MainWindow::connect(phoneScatter,&QXYSeries::hovered,mw,[phoneScatter] (const QPointF &waste, bool check) {
+            if(check == true){
+                phoneScatter->setPointLabelsVisible(true);
+            }
+            else {
+                phoneScatter->setPointLabelsVisible(false);
+            }
+        });
+        phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+        phoneScatter->setMarkerSize(10.0);
+        phoneScatter->setPointLabelsFormat(it->MAC);
+        *phoneScatter<<QPointF(it->x,it->y);
+        if(xMax<it->x) {
+            xMax = it->x;
+        }
+        if(xMax<it->y) {
+            xMax = it->y;
+        }
+        if(xMin>it->x) {
+            xMin = it->x;
+        }
+        if(xMin>it->y) {
+            xMin = it->y;
+        }
+        vSeries.push_back(phoneScatter);
+
+    }
+
+
+    // Configure your chart
+    QChart *chartScatter = new QChart();
+    QValueAxis *axisYmap = new QValueAxis();
+       xMax += 5;
+       xMin -= 5;
+       axisYmap->setRange(xMin, xMax);
+
+
+       chartScatter->addAxis(axisYmap, Qt::AlignLeft);
+       QValueAxis *axisXmap = new QValueAxis();
+       axisXmap->setRange(xMin, xMax);
+
+       chartScatter->addAxis(axisXmap, Qt::AlignBottom);
+
+       for(int i = 0; i < vBoards.size(); i++){
+           chartScatter->addSeries(vBoards.at(i));
+           vBoards.at(i)->attachAxis(axisYmap);
+           vBoards.at(i)->attachAxis(axisXmap);
+       }
+
+    for(int i = 0; i < vSeries.size(); i++){
+        chartScatter->addSeries(vSeries.at(i));
+        vSeries.at(i)->attachAxis(axisYmap);
+        vSeries.at(i)->attachAxis(axisXmap);
+    }
+
+
+    chartScatter->setTitle(mapTitle.c_str());
+    chartScatter->setDropShadowEnabled(false);
+    chartScatter->legend()->setVisible(false);
+
+    // Create your chart view
+    mapScatter->setChart(chartScatter);
+    mapScatter->setRenderHint(QPainter::Antialiasing);
+
+
+
+};
+
 void show_stats_graph (QLabel *statsLabel,int indexCombo,QChartView *statsChartViewBar1,QChartView *statsChartViewBar2,Db_original *db,QDateTime temp) {
 
     QString dateText = QString("Date selected: %1").arg(temp.toString("d/M/yyyy"));
@@ -463,229 +582,18 @@ MainWindow::MainWindow(QWidget *parent)
     // MAP TAB
 
 
+    QChartView *mapScatter = new QChartView();
+    string mapTitle = "Real time map of detected devices";
 
-   /* // Create your time series
-    QScatterSeries *boardScatter = new QScatterSeries();
-    boardScatter->setName("Boards");
+    show_map(this, mapScatter, mapTitle, roots, db);
 
-    boardScatter->setPointLabelsVisible(false);
-    connect(boardScatter,&QXYSeries::hovered,this,[boardScatter] (const QPointF &waste, bool check) {
-        if(check == true){
-            boardScatter->setPointLabelsVisible(true);
-        }
-        else {
-            boardScatter->setPointLabelsVisible(false);
-        }
-
-    });
-    boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-    boardScatter->setMarkerSize(15.0);
-
-    *boardScatter<<QPointF(3,4);*/
-
-    vector<QScatterSeries*> vSeries;
-    vector<QScatterSeries*> vBoards;
-    float xMax=0, xMin=0, yMax=0, yMin=0;
-    for(map<string, Point>::iterator it2=roots.begin(); it2!=roots.end(); ++it2) {
-            QScatterSeries *boardScatter = new QScatterSeries();
-            boardScatter->setPointLabelsVisible(false);
-            connect(boardScatter,&QXYSeries::hovered,this,[boardScatter] (const QPointF &waste, bool check) {
-                if(check == true){
-                    boardScatter->setPointLabelsVisible(true);
-                }
-                else {
-                    boardScatter->setPointLabelsVisible(false);
-                }
-            });
-            boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
-            boardScatter->setMarkerSize(20.0);
-            boardScatter->setColor("blue");
-            QString boardLabel = it2->first.c_str();
-            //boardLabel.append("\n test");
-            boardScatter->setPointLabelsFormat(boardLabel);
-            *boardScatter<<QPointF(it2->second.x,it2->second.y);
-            if(xMax<it2->second.x) {
-                xMax = it2->second.x;
-            }
-            if(yMax<it2->second.y) {
-                yMax = it2->second.y;
-            }
-            if(xMin>it2->second.x) {
-                xMin = it2->second.x;
-            }
-            if(yMin>it2->second.y) {
-                yMin = it2->second.y;
-            }
-            vBoards.push_back(boardScatter);
-        }
-
-
-    time_t timev;
-    time(&timev);
-    vector<schema_triang> vlast;
-
-    // Usare timev invece di ctime
-
-
-    vlast = db->last_positions(timev);
-
-    for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){
-        QScatterSeries *phoneScatter = new QScatterSeries();
-        phoneScatter->setPointLabelsVisible(false);
-        connect(phoneScatter,&QXYSeries::hovered,this,[phoneScatter] (const QPointF &waste, bool check) {
-            if(check == true){
-                phoneScatter->setPointLabelsVisible(true);
-            }
-            else {
-                phoneScatter->setPointLabelsVisible(false);
-            }
-        });
-        phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
-        phoneScatter->setMarkerSize(10.0);
-        phoneScatter->setPointLabelsFormat(it->MAC);
-        *phoneScatter<<QPointF(it->x,it->y);
-        if(xMax<it->x) {
-                    xMax = it->x;
-                }
-                if(yMax<it->y) {
-                    yMax = it->y;
-                }
-                if(xMin>it->x) {
-                    xMin = it->x;
-                }
-                if(yMin>it->y) {
-                    yMin = it->y;
-                }
-        vSeries.push_back(phoneScatter);
-
-    }
-
-
-    // Configure your chart
-    QChart *chartScatter = new QChart();
-    QValueAxis *axisYmap = new QValueAxis();
-       yMax += 5;
-       yMin -= 5;
-       axisYmap->setRange(yMin, yMax);
-
-
-       chartScatter->addAxis(axisYmap, Qt::AlignLeft);
-       QValueAxis *axisXmap = new QValueAxis();
-
-       xMax += 5;
-       xMin -= 5;
-       axisXmap->setRange(xMin, xMax);
-
-       chartScatter->addAxis(axisXmap, Qt::AlignBottom);
-
-       for(int i = 0; i < vBoards.size(); i++){
-           chartScatter->addSeries(vBoards.at(i));
-           vBoards.at(i)->attachAxis(axisYmap);
-           vBoards.at(i)->attachAxis(axisXmap);
-       }
-
-    for(int i = 0; i < vSeries.size(); i++){
-        chartScatter->addSeries(vSeries.at(i));
-        vSeries.at(i)->attachAxis(axisYmap);
-        vSeries.at(i)->attachAxis(axisXmap);
-    }
-
-
-    chartScatter->setTitle("Real time map of detected devices");
-    chartScatter->setDropShadowEnabled(false);
-    chartScatter->legend()->setVisible(false);
-
-    // Create your chart view
-    QChartView *graphicsViewScatter = new QChartView(chartScatter);
-    graphicsViewScatter->setRenderHint(QPainter::Antialiasing);
-
-
-    int n_sec_last=30;
+    int n_sec_last=10;
     this->mapTimer->setInterval(n_sec_last*1000);
 
-    connect(this->mapTimer, &QTimer::timeout,this, [xMax,xMin,yMax,yMin,vBoards,graphicsViewScatter,db]() {
-        vector<QScatterSeries*> vSeries;
+    connect(this->mapTimer, &QTimer::timeout,this, [&,mapTitle,mapScatter,db]() {
 
+        show_map(this, mapScatter, mapTitle, roots, db);
 
-        time_t timev;
-        time(&timev);
-        vector<schema_triang> vlast;
-        float xMax2=xMax-5, xMin2=xMin+5, yMax2=yMax-5, yMin2=yMin+5;
-
-
-        // Usare timev invece di ctime
-
-        vlast = db->last_positions(timev);
-
-        for(vector<schema_triang>::iterator it=vlast.begin(); it!=vlast.end();++it){
-            QScatterSeries *phoneScatter = new QScatterSeries();
-            phoneScatter->setPointLabelsVisible(false);
-            connect(phoneScatter,&QXYSeries::hovered,phoneScatter,[phoneScatter] (const QPointF &waste, bool check) {
-                if(check == true){
-                    phoneScatter->setPointLabelsVisible(true);
-                }
-                else {
-                    phoneScatter->setPointLabelsVisible(false);
-                }
-            });
-            phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
-            phoneScatter->setMarkerSize(10.0);
-            phoneScatter->setPointLabelsFormat(it->MAC);
-            *phoneScatter<<QPointF(it->x,it->y);
-            if(xMax2<it->x) {
-                            xMax2 = it->x;
-                        }
-                        if(yMax2<it->y) {
-                            yMax2 = it->y;
-                        }
-                        if(xMin2>it->x) {
-                            xMin2 = it->x;
-                        }
-                        if(yMin2>it->y) {
-                            yMin2 = it->y;
-                        }
-            vSeries.push_back(phoneScatter);
-        }
-
-
-        // Configure your chart
-        QChart *chartScatter = new QChart();
-        QValueAxis *axisYmap = new QValueAxis();
-
-                yMax2 += 5;
-                yMin2 -= 5;
-                axisYmap->setRange(yMin2, yMax2);
-
-                chartScatter->addAxis(axisYmap, Qt::AlignLeft);
-                QValueAxis *axisXmap = new QValueAxis();
-
-                xMax2 += 5;
-                xMin2 -= 5;
-                axisXmap->setRange(xMin2, xMax2);
-
-                chartScatter->addAxis(axisXmap, Qt::AlignBottom);
-
-                for(int i = 0; i < vBoards.size(); i++){
-                    chartScatter->addSeries(vBoards.at(i));
-                    vBoards.at(i)->attachAxis(axisYmap);
-                    vBoards.at(i)->attachAxis(axisXmap);
-                }
-
-        for(int i = 0; i < vSeries.size(); i++){
-            chartScatter->addSeries(vSeries.at(i));
-            vSeries.at(i)->attachAxis(axisYmap);
-            vSeries.at(i)->attachAxis(axisXmap);
-        }
-
-        chartScatter->setTitle("Real time map of detected devices");
-        chartScatter->setDropShadowEnabled(false);
-        chartScatter->legend()->setVisible(false);
-
-
-
-        // Create your chart view
-        graphicsViewScatter->setChart(chartScatter);
-        graphicsViewScatter->setRenderHint(QPainter::Antialiasing);
     });
     this->mapTimer->start();
 
@@ -936,6 +844,16 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
+    // TIMELAPSE TAB
+
+
+
+    QVBoxLayout *timeLayout = new QVBoxLayout;
+    QWidget *timeWidget = new QWidget;
+    timeWidget->setLayout(timeLayout);
+
+
+
 
     // LOAD CREATED TABS
 
@@ -943,9 +861,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto tw = new QTabWidget (this);
     tw->addTab(settingsWidget, "Settings");
-    tw->addTab(graphicsViewScatter, "Map");
+    tw->addTab(mapScatter, "Map");
     tw->addTab(histWidget, "History");
     tw->addTab(statsWidget, "Stats");
+    tw->addTab(timeWidget, "Time lapse");
+
 
     setCentralWidget(tw);
 
