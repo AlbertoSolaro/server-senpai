@@ -317,8 +317,6 @@ void Db_original::loop1(time_t timestamp)  {
 
         //per ogni MAC-TIMESTAMP che rispetta la condizione, chiamo la triangolazione passando un vector con i record e il numero di record del vettore(e quindi delle schede)
         //schema_triang dato_triang = triangolazione(vector_dati, N_schede);
-        qDebug()<<"measure_power="<<triang.measure_power;
-        qDebug()<<"constant_envir="<<triang.constant_envir;
 
         Point estimated_point = triang.triangolate(selected->second);
 
@@ -521,7 +519,6 @@ int Db_original::callback_statistics(void *data, int argc, char **argv, char **a
 
     string MAC=argv[0];
     int * info = (int*)data;
-    cout << "info " << info[0] << " - " << info[1] << endl;
     map<string, statistics>::iterator found;
     found = stat.find(MAC);
     if (found == stat.end()) {
@@ -635,11 +632,12 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     typedef function<bool(pair<string, statistics>, pair<string, statistics>)> Comparator;
 
     Comparator compFunctor = [](pair<string, statistics> elem1, pair<string, statistics> elem2) {
+       if(elem2.second.count_periodi== elem1.second.count_periodi)
+           return elem1.first<elem2.first;
         return elem2.second.count_periodi < elem1.second.count_periodi;
     };
 
     set<pair<string, statistics>, Comparator> ordered_stat(	stat.begin(), stat.end(), compFunctor);
-
     //salvo i K_BEST mac aventi maggiore frequenza: salvo il vettore con le etichette e un vettore di MAC->vettore_frequenze_periodo
     best_k_mac best_macs(etichette_periodo);
     set<pair<string, statistics>>::iterator it = ordered_stat.begin();

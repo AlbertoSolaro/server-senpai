@@ -13,8 +13,8 @@ Triangulation::Triangulation(){}
 map<string, Point> Triangulation::roots;
 vector<Distance> Triangulation::distances;
 
-int Triangulation::measure_power=-69;
-float Triangulation::constant_envir=2.25;
+int Triangulation::measure_power=-43;
+float Triangulation::constant_envir=2.5;
 int Triangulation::nschede;
 float distance(Point point1, Point point2){
   return sqrt(pow(point1.x - point2.x, 2) +pow(point1.y - point2.y, 2) * 1.0);
@@ -26,9 +26,9 @@ void kLargest(Column* arr, int k) {
 	Comparator compFunctor = 	[](std::pair<int, float> elem1 ,std::pair<int, float> elem2) { return elem1.second <= elem2.second; };
  
 	set<pair<int, float>, Comparator> setOfWords(arr->distances.begin(), arr->distances.end(), compFunctor);
-
-	for (int i = 0; i < k; i++)
-	  arr->topk.push_back(next(setOfWords.begin(),i)->first);
+    int i = 0;
+    for ( auto it=setOfWords.begin(); i < k || it!=setOfWords.end(); i++,++it)
+      arr->topk.push_back(it->first);
 }
 
 void Triangulation::initTriang(map<string, Point> r, int measured_power, float enviromental_constant, int nschede) {
@@ -36,8 +36,6 @@ void Triangulation::initTriang(map<string, Point> r, int measured_power, float e
   Triangulation::setConstantEnvir(enviromental_constant);
   Triangulation::setMeasuredPower(measured_power);
   Triangulation::setNschede(nschede);
-  qDebug()<<"measure_power="<< measure_power;
-  qDebug()<<"constant_envir="<<constant_envir;
 
 
   //auto distances = getDistances();
@@ -50,35 +48,24 @@ void Triangulation::initTriang(map<string, Point> r, int measured_power, float e
       Point point1=it->second;
       Point point2=it2->second;
       float distance=sqrt(pow(point1.x - point2.x, 2) +pow(point1.y - point2.y, 2) * 1.0);
-      qDebug()<<point1.x<<" "<<point1.y<<" "<<point2.x<<" "<<point2.y;
       Distance dist=Distance(distance, it->first, it2->first);
-      qDebug()<<distance;
-      qDebug()<<dist.mac1.c_str()<<" "<<dist.mac2.c_str()<<" "<<dist.distance;
 
       distances.push_back(dist);
     }
   }
   
-  for(vector<Distance>::iterator it=distances.begin(); it!=distances.end(); it++)
-    qDebug()<<"Distance between "<<it->mac1.c_str()<<" and "<<it->mac2.c_str()<<": "<<it->distance;
-  cout<<endl;
 }
 
 Point Triangulation::triangolate(vector<schema_original> vector_dati) {
   auto distances = getDistances();
   if(distances.empty())
       qDebug()<<"CAZZO DI BUDDAH";
-  for(vector<Distance>::iterator it=distances.begin(); it!=distances.end(); it++)
-    qDebug()<<"Distance between "<<it->mac1.c_str()<<" and "<<it->mac2.c_str()<<": "<<it->distance;
   map<string, float> dists;
   vector<Point> allpoints;
 
-  qDebug()<<"measure_power="<< measure_power;
-  qDebug()<<"constant_envir="<<constant_envir;
-
   for(auto v : vector_dati){
     dists.insert(pair<string, float>(v.root, Triangulation::rssi2meter(v.RSSI)));
-    qDebug()<< v.root.c_str() << " -triangulation::rssi= "<<v.RSSI<< " triangulation::meter= " << (double)Triangulation::rssi2meter(v.RSSI);
+    qDebug()<<"MAC_disp: "<<v.MAC.c_str()<< "MAC_scheda: "<< v.root.c_str() << " -triangulation::rssi= "<<v.RSSI<< " triangulation::meter= " << (double)Triangulation::rssi2meter(v.RSSI);
   }
   for(vector<Distance>::iterator distIt=distances.begin(); distIt!=distances.end(); distIt++){
       vector<Point> points=Triangulation::findPoints(*distIt, dists);
@@ -108,7 +95,10 @@ vector<Point> Triangulation::findPoints(Distance rootDistance, map<string, float
   float y1=roots.find(rootDistance.mac2)->second.y;
   float d=rootDistance.distance;
   if(d>(r0+r1)||d<(sqrt(pow(r0-r1, 2))))
-    return ret;
+   {
+      qDebug()<<"d="<<d<<" r0+r1="<<r0+r1<<" r0-r1="<<abs(r0-r1);
+      return ret;
+  }
   float a=(pow(r0,2)-pow(r1,2)+pow(d,2))/(2*d);
   float h=sqrt(pow(r0,2)-pow(a,2));
   float x2=x0+a*(x1-x0)/d;
@@ -147,7 +137,7 @@ Point Triangulation::findTruePoint(vector< Point > points) {
     
     for(int j=0; j<points.size(); j++){
       if(i==j) matrix[i].distances.insert(pair<int, float>(j, numeric_limits<float>::max()));
-      else matrix[i].distances.insert(pair<int, float>(j, distance(points[i], points[j])));
+      else matrix[i].distances.insert(pair<int, float>(j, abs(distance(points[i], points[j]))));
     }
     qDebug()<<"K="<<k;
     kLargest(&matrix[i],k);
@@ -181,6 +171,7 @@ Point Triangulation::findTruePoint(vector< Point > points) {
   float sumy=0;
   
   for(auto m : meanPoints){
+      qDebug()<<"P:"<<m.x<<" - "<<m.y;
     sumx+=m.x;
     sumy+=m.y;
   }

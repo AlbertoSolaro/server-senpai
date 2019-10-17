@@ -67,11 +67,20 @@ void show_stats_graph (QLabel *statsLabel,int indexCombo,QChartView *statsChartV
     statsChartBar1->addSeries(statsLineseries1);
     statsChartBar1->setTitle(mac1Text);
     statsChartBar1->setAnimationOptions(QChart::SeriesAnimations);
-
+    CTime time_fin;
+    CTime time_in(temp.toTime_t());
     QStringList statsCategories;
     switch (indexCombo) {
     case 0:
+       /* time_fin=time_in+ CTimeSpan(0,2,0,0);
+       CTimeSpan  range(0,0,20,0);
+       for(int i=0;i<6;i++)
+       {
+
+           statsCategories<< QString((time_fin-range).Format(_T("%H:%M")));
+       }*/
         statsCategories << temp.toString("hh:mm") << temp.addSecs(1200).toString("hh:mm") << temp.addSecs(2400).toString("hh:mm") << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(4800).toString("hh:mm") << temp.addSecs(6000).toString("hh:mm");
+        statsCategories.sort();
         break;
     case 1:
         statsCategories << temp.toString("hh:mm") << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(7200).toString("hh:mm") << temp.addSecs(10800).toString("hh:mm") << temp.addSecs(14400).toString("hh:mm") << temp.addSecs(18000).toString("hh:mm");
@@ -338,9 +347,9 @@ MainWindow::MainWindow(QWidget *parent)
     QGroupBox *YGroup=new QGroupBox(tr("Y"));
     QLineEdit *YEdit=new QLineEdit();
     QGroupBox *MPGroup=new QGroupBox(tr("Measured power"));
-    QLineEdit *MPEdit=new QLineEdit(tr("-69"));
+    QLineEdit *MPEdit=new QLineEdit(tr("-50"));
     QGroupBox *ENGroup=new QGroupBox(tr("Enviromental constant"));
-    QLineEdit *ENEdit=new QLineEdit(tr("2.25"));
+    QLineEdit *ENEdit=new QLineEdit(tr("2.5"));
 
     QGridLayout *MACLayout=new QGridLayout;
     MACLayout->addWidget(MACEdit, 1, 0, 1, 2);
@@ -734,7 +743,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     histStart = histDateEdit->dateTime().addSecs(-1800).toTime_t();
     histEnd = histDateEdit->dateTime().toTime_t();
-
+    QDateTime t = QDateTime::fromTime_t(histStart);
+    histDateEdit->setDateTime(t);
     histMap = db->number_of_rilevations(histStart, histEnd);
 
     for(map<string,num_ril>::iterator itMap=histMap.begin(); itMap!=histMap.end();++itMap){
@@ -828,6 +838,8 @@ MainWindow::MainWindow(QWidget *parent)
     time_t statsStart;
 
     statsStart = statsDateEdit->dateTime().addSecs(-7200).toTime_t();
+    QDateTime r = QDateTime::fromTime_t(statsStart);
+    statsDateEdit->setDateTime(r);
 
     bestStat = db->statistics_fun(statsStart,1);
 
@@ -920,6 +932,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     });
 
+    // Update chart with enter press
+    connect(statsDateEdit, &QAbstractSpinBox::editingFinished, this, [statsLabel, statsDateEdit, statsComboBox, statsChartViewBar1, statsChartViewBar2, db] (){
+
+        QDateTime temp=statsDateEdit->dateTime();
+        int indexCombo=statsComboBox->currentIndex();
+        show_stats_graph (statsLabel, indexCombo, statsChartViewBar1, statsChartViewBar2, db, temp);
+
+    });
 
     // Update chart with selected frequency
     connect(statsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [statsLabel, statsDateEdit, statsChartViewBar1, statsChartViewBar2, db] (int indexCombo){
