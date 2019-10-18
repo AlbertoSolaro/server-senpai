@@ -24,13 +24,11 @@ class Triangulation {
 
   static void kLargest(Column* arr, int k);
 
-
-
-
 public:
    static int nschede;
    static int measure_power; //potenza misurata a un metro di distanza
    static float constant_envir; //constante ambientale(da 2 a 4)
+   static float margin;
 
   Triangulation() {}
   static void initTriang(map<string, Point> vector_dati, int, float, int);
