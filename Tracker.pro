@@ -22,7 +22,12 @@ SOURCES += \
     main.cpp \
     mainwindow.cpp \
     schema/schema_original.cpp \
-    schema/schema_triang.cpp
+    schema/schema_triang.cpp \
+    tabs/history.cpp \
+    tabs/maps.cpp \
+    tabs/settings.cpp \
+    tabs/stats.cpp \
+    tabs/time_lapse.cpp
 
 HEADERS += \
     db/Db_original.h \

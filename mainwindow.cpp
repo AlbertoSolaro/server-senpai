@@ -145,12 +145,12 @@ MainWindow::MainWindow(QWidget *parent)
         StartButton->setText("STOP TRIANGULATION");
         int n_sec_history=30;
         this->timer->setInterval(n_sec_history*1000);
-        connect(this->timer, &QTimer::timeout,this, [db]() {
+        connect(this->timer, &QTimer::timeout,this, [this]() {
           /*  time_t timev;
             time(&timev);
             db->loop1(timev);
         */
-        db->loop1(CTime(2019,10,16,00,55,00).GetTime());
+            this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
         });
         this->timer->start();
     });
@@ -197,14 +197,14 @@ MainWindow::MainWindow(QWidget *parent)
     QChartView *mapScatter = new QChartView();
     string mapTitle = "Real time map of detected devices";
 
-    show_map(this, mapScatter, mapTitle);
+    show_map(mapScatter, mapTitle);
 
     int n_sec_last=10;
     this->mapTimer->setInterval(n_sec_last*1000);
 
-    connect(this->mapTimer, &QTimer::timeout,this, [&,mapTitle,mapScatter,db]() {
+    connect(this->mapTimer, &QTimer::timeout,this, [&,mapTitle,mapScatter]() {
 
-        show_map(this, mapScatter, mapTitle);
+        show_map(mapScatter, mapTitle);
 
     });
     this->mapTimer->start();
@@ -285,12 +285,12 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Update chart with enter press
-    connect(histDateEdit, &QAbstractSpinBox::editingFinished, this, [histLabel, histChartViewBar,histDateEdit,db] (){
+    connect(histDateEdit, &QAbstractSpinBox::editingFinished, this, [this,histLabel, histChartViewBar,histDateEdit] (){
         show_history_plot(histLabel, histChartViewBar,histDateEdit);
     });
 
     // Update chart with update function
-    connect(update_button, &QPushButton::released, this, [histLabel, histChartViewBar,histDateEdit,db] (){
+    connect(update_button, &QPushButton::released, this, [this,histLabel, histChartViewBar,histDateEdit] (){
 
         show_history_plot(histLabel, histChartViewBar,histDateEdit);
     });
@@ -425,7 +425,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     // Update chart with selected time
-    connect(stats_update_button, &QPushButton::released, this, [statsLabel, statsDateEdit, statsComboBox, statsChartViewBar1, statsChartViewBar2, db] (){
+    connect(stats_update_button, &QPushButton::released, this, [this,statsLabel, statsDateEdit, statsComboBox, statsChartViewBar1, statsChartViewBar2] (){
 
         QDateTime temp=statsDateEdit->dateTime();
         int indexCombo=statsComboBox->currentIndex();
@@ -434,7 +434,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // Update chart with enter press
-    connect(statsDateEdit, &QAbstractSpinBox::editingFinished, this, [statsLabel, statsDateEdit, statsComboBox, statsChartViewBar1, statsChartViewBar2, db] (){
+    connect(statsDateEdit, &QAbstractSpinBox::editingFinished, this, [this,statsLabel, statsDateEdit, statsComboBox, statsChartViewBar1, statsChartViewBar2] (){
 
         QDateTime temp=statsDateEdit->dateTime();
         int indexCombo=statsComboBox->currentIndex();
@@ -443,7 +443,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     // Update chart with selected frequency
-    connect(statsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [statsLabel, statsDateEdit, statsChartViewBar1, statsChartViewBar2, db] (int indexCombo){
+    connect(statsComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this, statsLabel, statsDateEdit, statsChartViewBar1, statsChartViewBar2] (int indexCombo){
 
         QDateTime temp=statsDateEdit->dateTime();
         show_stats_graph (statsLabel, indexCombo, statsChartViewBar1, statsChartViewBar2, temp);
