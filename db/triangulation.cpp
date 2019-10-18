@@ -184,9 +184,6 @@ Point Triangulation::findTruePoint(vector<Point> points) {
 }
 
 void Triangulation::kLargest(Column* arr, int k) {
-	// typedef function<bool(pair<int, float>, pair<int, float>)> Comparator;
-	// Comparator compFunctor = 	[](std::pair<int, float> elem1 ,std::pair<int, float> elem2) { return elem1.second <= elem2.second; };
- 
   vector<pair<int, float>> setOfWords = sortMap(arr->distances,
     [](const pair<int, float> &l, const pair<int, float> &r) {
       if (l.second != r.second)
@@ -198,16 +195,3 @@ void Triangulation::kLargest(Column* arr, int k) {
   for (auto it = setOfWords.begin(); i < k || it != setOfWords.end(); i++, ++it)
     arr->topk.push_back(it->first);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
