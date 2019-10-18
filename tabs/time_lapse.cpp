@@ -1,0 +1,9 @@
+#include "mainwindow.h"
+#include "ui_mainwindow.h"
+#include "schema/helperclass.h"
+#include <QDebug>
+#include <db/Db_original.h>
+#include <atltime.h>
+#include <ctime>
+#include <regex>
+#include <QtGlobal>
