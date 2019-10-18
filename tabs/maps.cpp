@@ -8,7 +8,7 @@
 #include <regex>
 #include <QtGlobal>
 
-void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
+void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime currTime) {
 
     vector<QScatterSeries *> vSeries;
     vector<QScatterSeries *> vBoards;
@@ -40,13 +40,12 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
         vBoards.push_back(boardScatter);
     }
 
-    time_t timev;
-    time(&timev);
+
     vector<schema_triang> vlast;
 
     // Usare timev invece di ctime
 
-    vlast = db->last_positions(timev);
+    vlast = db->last_positions(currTime.toTime_t());
 
     for (vector<schema_triang>::iterator it = vlast.begin(); it != vlast.end(); ++it) {
         QScatterSeries *phoneScatter = new QScatterSeries();
@@ -59,6 +58,7 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
         });
         phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
         phoneScatter->setMarkerSize(10.0);
+        phoneScatter->setColor("green");
         phoneScatter->setPointLabelsFormat(it->MAC);
         *phoneScatter << QPointF(it->x, it->y);
         if (xMax < it->x)
@@ -75,8 +75,8 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
     // Configure your chart
     QChart *chartScatter = new QChart();
     QValueAxis *axisYmap = new QValueAxis();
-    xMax += 5;
-    xMin -= 5;
+    xMax += 2;
+    xMin -= 2;
     axisYmap->setRange(xMin, xMax);
 
     chartScatter->addAxis(axisYmap, Qt::AlignLeft);
@@ -97,7 +97,7 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
         vSeries.at(i)->attachAxis(axisXmap);
     }
 
-    chartScatter->setTitle(mapTitle.c_str());
+    chartScatter->setTitle(mapTitle);
     chartScatter->setDropShadowEnabled(false);
     chartScatter->legend()->setVisible(false);
 
