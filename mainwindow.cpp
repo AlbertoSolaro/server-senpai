@@ -651,8 +651,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     histStart = histDateEdit->dateTime().addSecs(-1800).toTime_t();
     histEnd = histDateEdit->dateTime().toTime_t();
-    QDateTime t = QDateTime::fromTime_t(histStart);
-    histDateEdit->setDateTime(t);
+  //  QDateTime t = QDateTime::fromTime_t(histStart);
+  //  histDateEdit->setDateTime(t);
     histMap = db->number_of_rilevations(histStart, histEnd);
 
     for(map<string,num_ril>::iterator itMap=histMap.begin(); itMap!=histMap.end();++itMap){
@@ -746,8 +746,8 @@ MainWindow::MainWindow(QWidget *parent)
     time_t statsStart;
 
     statsStart = statsDateEdit->dateTime().addSecs(-7200).toTime_t();
-    QDateTime r = QDateTime::fromTime_t(statsStart);
-    statsDateEdit->setDateTime(r);
+   // QDateTime r = QDateTime::fromTime_t(statsStart);
+   // statsDateEdit->setDateTime(r);
 
     bestStat = db->statistics_fun(statsStart,1);
 
