@@ -15,7 +15,8 @@ vector<Distance> Triangulation::distances;
 
 int Triangulation::measure_power=-43;
 float Triangulation::constant_envir=2.5;
-int Triangulation::nschede; 
+int Triangulation::nschede;
+float Triangulation::margin = 0.5;
 
 void Triangulation::initTriang(map<string, Point> roots, int measured_power, float enviromental_constant, int nschede) {
   Triangulation::setRoots(roots);
@@ -55,9 +56,9 @@ Point Triangulation::triangolate(vector<schema_original> vector_dati) {
     for(auto p : points)
       allpoints.push_back(p);
   }
-    
+
   Point result=Triangulation::findTruePoint(allpoints);
-  cout << "Point found: x=" << result.x << " y=" << result.y << endl << endl;
+  qDebug() << "Point found: x=" << result.x << " y=" << result.y << endl << endl;
   return result;
 }
 
@@ -74,43 +75,77 @@ vector<Point> Triangulation::findPoints(Distance rootDistance, map<string, float
   float y1=roots.find(rootDistance.mac2)->second.y;
 
   float d=rootDistance.distance;
-  
+
   if(d>(r0+r1)||d<(sqrt(pow(r0-r1, 2)))) {
-      qDebug()<<"d="<<d<<" r0+r1="<<r0+r1<<" r0-r1="<<abs(r0-r1);
-      return ret;
+      if(d > (r0+r1+margin) || d<(abs(r0-r1)-margin)){
+          qDebug()<<"d="<<d<<" r0+r1="<<r0+r1<<" r0-r1="<<abs(r0-r1);
+          return ret;
+      } else if(d <= (r0+r1+margin) && d > (r0+r1)){
+          float diff = d - (r0 + r1) - (float)0.1;
+          if(r0 < r1) r0 += diff;
+          else r1 += diff;
+
+          // r0 = r0 + diff / 2;
+          // r1 = r1 + diff / 2;
+      } else if(d>=(abs(r0-r1)-margin) && d<(sqrt(pow(r0-r1, 2)))) {
+          float diff = sqrt(pow(r0-r1, 2)) - d + (float)0.1;
+          if(r0 < r1) r1 -= diff;
+          else r0 -= diff;
+      } else {
+          qDebug() << "Torna a studiare logica";
+      }
   }
 
   float a=(pow(r0,2)-pow(r1,2)+pow(d,2))/(2*d);
   float h=sqrt(pow(r0,2)-pow(a,2));
-  
+
   float x2=x0+a*(x1-x0)/d;
   float y2=y0+a*(y1-y0)/d;
-  
+
+  qDebug() << "X2: " << x2 << " - Y2: " << y2 << endl;
+
   float x31=x2+h*(y1-y0)/d;
   float x32=x2-h*(y1-y0)/d;
   float y31=y2-h*(x1-x0)/d;
   float y32=y2+h*(x1-x0)/d;
-  
+
+  qDebug() << "X31: " << x31 << " - Y31: " << y31 << endl;
+  qDebug() << "X32: " << x32 << " - Y32: " << y32 << endl;
+
   Point point1=Point(x31, y31);
   Point point2=Point(x32, y32);
   ret.push_back(point1);
   ret.push_back(point2);
-  
+
   return ret;
 }
 
+
 typedef function<bool(pair<int, int>, pair<int, int>)> Comparator2;
-vector<pair<int,float>> sortMap(map<int, float> m, Comparator2 comp){
-  vector<pair<int, float>> vec;
-  
-  std::copy(m.begin(),
-            m.end(),
-            std::back_inserter<std::vector<pair<int, float>>>(vec));
+  vector<pair<int,float>> sortMap(map<int, float> m, Comparator2 comp){
+    vector<pair<int, float>> vec;
 
-  std::sort(vec.begin(), vec.end(), comp);
+    std::copy(m.begin(),
+              m.end(),
+              std::back_inserter<std::vector<pair<int, float>>>(vec));
 
-  return vec;
-}
+    std::sort(vec.begin(), vec.end(), comp);
+
+    return vec;
+  }
+
+typedef function<bool(pair<int, int>, pair<int, int>)> Comparator3;
+  vector<pair<int,int>> sortMap2(map<int, int> m, Comparator3 comp){
+    vector<pair<int, int>> vec;
+
+    std::copy(m.begin(),
+              m.end(),
+              std::back_inserter<std::vector<pair<int, int>>>(vec));
+
+    std::sort(vec.begin(), vec.end(), comp);
+
+    return vec;
+  }
 
 Point Triangulation::findTruePoint(vector<Point> points) {
   if (points.size() == 0) {
@@ -154,14 +189,21 @@ Point Triangulation::findTruePoint(vector<Point> points) {
     }
   }
 
-  typedef function<bool(pair<int, int>, pair<int, int>)> Comparator;
-  Comparator compFunctor = [](pair<int, int> elem1, std::pair<int, int> elem2) { if(elem1.second == elem2.second) return elem1.first>elem2.first; else return (elem1.second>elem2.second); };
+  // typedef function<bool(pair<int, int>, pair<int, int>)> Comparator;
+  // Comparator compFunctor = ;
 
-  set<pair<int, int>, Comparator> setOfWords(reps.begin(), reps.end(), compFunctor);
+  // set<pair<int, int>, Comparator> setOfWords(reps.begin(), reps.end(), compFunctor);
+
+    vector<pair<int, int>> setOfWords = sortMap2(reps,
+                                          [](pair<int, int> elem1, std::pair<int, int> elem2) {
+                                                if(elem1.second == elem2.second)
+                                                  return elem1.first>elem2.first;
+                                                else return (elem1.second>elem2.second);
+                                          });
 
   vector<int> topkpos;
   for (int i = 0; i < k; i++)
-    topkpos.push_back(next(setOfWords.begin(), i)->first);
+     topkpos.push_back(next(setOfWords.begin(), i)->first);
 
   vector<Point> meanPoints;
   for (int i = 0; i < topkpos.size(); i++)
@@ -187,11 +229,14 @@ void Triangulation::kLargest(Column* arr, int k) {
   vector<pair<int, float>> setOfWords = sortMap(arr->distances,
     [](const pair<int, float> &l, const pair<int, float> &r) {
       if (l.second != r.second)
-        return l.second < r.second;
+        return l.second > r.second;
       return l.first < r.first;
     });
 
   int i = 0;
-  for (auto it = setOfWords.begin(); i < k || it != setOfWords.end(); i++, ++it)
+  for (auto it = setOfWords.begin(); i < k && it != setOfWords.end(); i++, ++it)
     arr->topk.push_back(it->first);
 }
+
+
+
