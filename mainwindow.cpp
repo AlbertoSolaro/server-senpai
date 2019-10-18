@@ -85,29 +85,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    QPushButton *ChangeButton=new QPushButton("Set constants", this);
-    connect(ChangeButton, &QPushButton::released, this, [ENEdit, MPEdit, DevicesList, this](){
-        if(MPEdit->text().toInt()>0||
-                !regex_match(MPEdit->text().toStdString(),regex("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"))){
-            QMessageBox msgbox;
-            msgbox.setText("Measured power can only be a negative integer.");
-            msgbox.exec();
-            return;
-        }
-        if(ENEdit->text().toFloat()<2||ENEdit->text().toFloat()>4){
-            QMessageBox msgbox;
-            msgbox.setText("Enviromental constant should be between 2 and 4");
-            msgbox.exec();
-            return;
-        }
-        this->measured_power=MPEdit->text().toInt();
-        this->env_const=ENEdit->text().toFloat();
-        qDebug()<<this->measured_power;
-        qDebug()<<this->env_const;
 
-        DevicesList->append(QString::fromStdString("Constants changed: measured power is "+to_string(this->measured_power)+" and enviromental constant is "+to_string(this->env_const)));
-
-    });
 
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
     connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit](){
@@ -175,11 +153,11 @@ MainWindow::MainWindow(QWidget *parent)
     InsertLayout->addWidget(MACGroup, 1, 0);
     InsertLayout->addWidget(XGroup, 1, 1);
     InsertLayout->addWidget(YGroup, 1, 2);
-    InsertLayout->addWidget(MPGroup, 2, 0);
-    InsertLayout->addWidget(ENGroup, 2, 1);
+    InsertLayout->addWidget(InsertButton, 2, 0);
+    InsertLayout->addWidget(RemoveButton, 2, 1);
+    InsertLayout->addWidget(MPGroup, 3, 0);
+    InsertLayout->addWidget(ENGroup, 3, 1);
     InsertLayout->addWidget(StartButton, 3, 2);
-    InsertLayout->addWidget(InsertButton, 3, 0);
-    InsertLayout->addWidget(RemoveButton, 3, 1);
 
     InsertGroup->setLayout(InsertLayout);
 
