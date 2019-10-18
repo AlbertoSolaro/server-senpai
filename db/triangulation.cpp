@@ -77,7 +77,10 @@ vector<Point> Triangulation::findPoints(Distance rootDistance, map<string, float
   float d=rootDistance.distance;
 
   if(d>(r0+r1)||d<(sqrt(pow(r0-r1, 2)))) {
-      if(d > (r0+r1+margin) || d<(abs(r0-r1)-margin)){
+      qDebug()<<"d="<<d<<" r0+r1="<<r0+r1<<" r0-r1="<<abs(r0-r1);
+      return ret;
+
+      /*if(d > (r0+r1+margin) || d<(abs(r0-r1)-margin)){
           qDebug()<<"d="<<d<<" r0+r1="<<r0+r1<<" r0-r1="<<abs(r0-r1);
           return ret;
       } else if(d <= (r0+r1+margin) && d > (r0+r1)){
@@ -93,7 +96,7 @@ vector<Point> Triangulation::findPoints(Distance rootDistance, map<string, float
           else r0 -= diff;
       } else {
           qDebug() << "Torna a studiare logica";
-      }
+      }*/
   }
 
   float a=(pow(r0,2)-pow(r1,2)+pow(d,2))/(2*d);

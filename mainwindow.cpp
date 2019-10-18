@@ -14,7 +14,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->triang_started=false;
     this->timer = new QTimer(this);
     this->mapTimer = new QTimer(this);
-    this->db = new Db_original();
 
     //---------------------
     // Create Main Window
@@ -25,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     // SETTINGS TAB
 
     this->n_roots=3;
-    Point a(0.0,2.5), b(3.8,0.0), c(0.0,0.0);
+    Point a(3.03,0.0), b(0.0,3.99), c(0.0,0.0);
     this->roots.insert(pair<string,Point>("30:AE:A4:1D:52:BC",a));
     this->roots.insert(pair<string,Point>("30:AE:A4:75:23:E8",b));
     this->roots.insert(pair<string,Point>("A4:CF:12:55:88:F0",c));
@@ -84,11 +83,13 @@ MainWindow::MainWindow(QWidget *parent)
     connect(InsertButton, &QPushButton::released, this, [integerSpinBox, MACEdit, XEdit, YEdit, DevicesList, this](){InsertButtonClicked(integerSpinBox, MACEdit, XEdit, YEdit, DevicesList);});
 
 
+    QChartView *mapScatter = new QChartView();
+    string mapTitle = "Real time map of detected devices";
 
 
-
+    this->db = new Db_original();
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
-    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit](){
+    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter](){
         if(this->triang_started){
             delete timer;
             this->mqtt.kill();
@@ -121,14 +122,19 @@ MainWindow::MainWindow(QWidget *parent)
 
         this->triang_started=true;
         StartButton->setText("STOP TRIANGULATION");
-        int n_sec_history=30;
+        int n_sec_history=10;
         this->timer->setInterval(n_sec_history*1000);
-        connect(this->timer, &QTimer::timeout,this, [this]() {
-          /*  time_t timev;
+        connect(this->timer, &QTimer::timeout,this, [this,mapTitle,mapScatter]() {
+            time_t timev;
             time(&timev);
             db->loop1(timev);
-        */
-            this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
+            time(&timev);
+            qDebug() << "Finish loop.Time: "<<timev;
+
+
+            show_map(mapScatter, mapTitle);
+
+            // this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
         });
         this->timer->start();
     });
@@ -171,7 +177,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // MAP TAB
 
-
+/*
     QChartView *mapScatter = new QChartView();
     string mapTitle = "Real time map of detected devices";
 
@@ -186,7 +192,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     });
     this->mapTimer->start();
-
+*/
 
 
 

@@ -19,7 +19,7 @@
 #include "triangulation.h"
 
 #define K_BEST 2 //numero di mac piu frequenti ritornati
-#define INT_SEC 120   //intervallo valido per mostrare l'ultima posizione
+#define INT_SEC 40   //intervallo valido per mostrare l'ultima posizione
 #define N_rilevazioni 1  //numero rilevazioni necessarie per essere "continuamente presente"
 #define N_schede 3		//numero di schede di rilevazione
 #define minuti_cont 5	//intervallo di tempo in cui rilevare dispositivi presenti
@@ -71,7 +71,7 @@ void Db_original::loop(time_t timestamp)  {
     //La funzione riceve il timestamp e calcola l'intervallo di tempo da cui prelevare il dato
 
     //n_sec e un parametro globale che indica ogni quanto la pulizia e effettuata
-    int n_sec = 30;
+    int n_sec = 10;
     struct tm  timeinfo;
     time_t rawtime;
 
@@ -229,9 +229,12 @@ int Db_original::callback1(void *data, int argc, char **argv, char **azColName) 
 
 void Db_original::loop1(time_t timestamp)  {
     //La funzione riceve il timestamp e calcola l'intervallo di tempo da cui prelevare il dato
+    time_t timev;
+    time(&timev);
+    qDebug() << "Start loop.Time: "<<timev;
 
     //n_sec e un parametro globale che indica ogni quanto la pulizia e effettuata
-    int n_sec = 30;
+    int n_sec = 10;
     struct tm  timeinfo;
     time_t rawtime;
 
@@ -465,6 +468,10 @@ int Db_original::callback_last_pos(void *data, int argc, char **argv, char **azC
 }
 
 vector<schema_triang> Db_original::last_positions(time_t timestamp) {
+
+    time_t timev;
+    time(&timev);
+    qDebug() << "Start last_positions.Time: "<<timev;
 
     //questa funzione riceveun orario e restituisce l'ultima posizione dei dispositivi rilevati entro gli ultimi INT_SEC secondi
     //questa funzione e chiamata ogni n secondi(30?)

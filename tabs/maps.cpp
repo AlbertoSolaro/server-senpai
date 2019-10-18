@@ -10,6 +10,10 @@
 
 void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
 
+    time_t timev;
+    time(&timev);
+    qDebug() << "Start map function.Time: "<<timev;
+
     vector<QScatterSeries *> vSeries;
     vector<QScatterSeries *> vBoards;
     float xMax = 0, xMin = 0;
@@ -40,13 +44,14 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
         vBoards.push_back(boardScatter);
     }
 
-    time_t timev;
     time(&timev);
     vector<schema_triang> vlast;
 
     // Usare timev invece di ctime
 
     vlast = db->last_positions(timev);
+    time(&timev);
+    qDebug() << "Finish last_positions.Time: "<<timev;
 
     for (vector<schema_triang>::iterator it = vlast.begin(); it != vlast.end(); ++it) {
         QScatterSeries *phoneScatter = new QScatterSeries();
@@ -104,4 +109,8 @@ void MainWindow::show_map(QChartView *mapScatter, string mapTitle) {
     // Create your chart view
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
+
+    time(&timev);
+    qDebug() << "Finish show map.Time: "<<timev;
+
 };

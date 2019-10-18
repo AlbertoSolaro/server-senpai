@@ -42,7 +42,9 @@ private:
     void CheckNRoots(QSpinBox*);
     void MqttStart() {
         QString program = "python mqtt.py";
-        qDebug() << "Start python";
+        time_t timev;
+        time(&timev);
+        qDebug() << "Start python.Time: "<<timev;
         this->mqtt.startDetached(program);
     }
     void DB();    
