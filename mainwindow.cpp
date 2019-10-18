@@ -86,8 +86,32 @@ MainWindow::MainWindow(QWidget *parent)
     QChartView *mapScatter = new QChartView();
     string mapTitle = "Real time map of detected devices";
 
+    QPushButton *ChangeButton=new QPushButton("Set constants", this);
+    connect(ChangeButton, &QPushButton::released, this, [ENEdit, MPEdit, DevicesList, this](){
+        if(MPEdit->text().toInt()>0||
+                !regex_match(MPEdit->text().toStdString(),regex("^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$"))){
+            QMessageBox msgbox;
+            msgbox.setText("Measured power can only be a negative integer.");
+            msgbox.exec();
+            return;
+        }
+        if(ENEdit->text().toFloat()<2||ENEdit->text().toFloat()>4){
+            QMessageBox msgbox;
+            msgbox.setText("Enviromental constant should be between 2 and 4");
+            msgbox.exec();
+            return;
+        }
+        this->measured_power=MPEdit->text().toInt();
+        this->env_const=ENEdit->text().toFloat();
+        qDebug()<<this->measured_power;
+        qDebug()<<this->env_const;
+
+        DevicesList->append(QString::fromStdString("Constants changed: measured power is "+to_string(this->measured_power)+" and enviromental constant is "+to_string(this->env_const)));
+
+    });
 
     this->db = new Db_original();
+
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
     connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter](){
         if(this->triang_started){
@@ -132,7 +156,8 @@ MainWindow::MainWindow(QWidget *parent)
             qDebug() << "Finish loop.Time: "<<timev;
 
 
-            show_map(mapScatter, mapTitle);
+            // TODO - non ho capito cosa è successo
+            //show_map(mapScatter, mapTitle);
 
             // this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
         });
@@ -159,11 +184,11 @@ MainWindow::MainWindow(QWidget *parent)
     InsertLayout->addWidget(MACGroup, 1, 0);
     InsertLayout->addWidget(XGroup, 1, 1);
     InsertLayout->addWidget(YGroup, 1, 2);
-    InsertLayout->addWidget(InsertButton, 2, 0);
-    InsertLayout->addWidget(RemoveButton, 2, 1);
-    InsertLayout->addWidget(MPGroup, 3, 0);
-    InsertLayout->addWidget(ENGroup, 3, 1);
+    InsertLayout->addWidget(MPGroup, 2, 0);
+    InsertLayout->addWidget(ENGroup, 2, 1);
     InsertLayout->addWidget(StartButton, 3, 2);
+    InsertLayout->addWidget(InsertButton, 3, 0);
+    InsertLayout->addWidget(RemoveButton, 3, 1);
 
     InsertGroup->setLayout(InsertLayout);
 
@@ -179,16 +204,18 @@ MainWindow::MainWindow(QWidget *parent)
 
 /*
     QChartView *mapScatter = new QChartView();
-    string mapTitle = "Real time map of detected devices";
+    QString mapTitle = "Real time map of detected devices";
+    QDateTime currTime = QDateTime::currentDateTime();
 
-    show_map(mapScatter, mapTitle);
+    show_map(mapScatter, mapTitle, currTime);
 
     int n_sec_last=10;
     this->mapTimer->setInterval(n_sec_last*1000);
 
     connect(this->mapTimer, &QTimer::timeout,this, [&,mapTitle,mapScatter]() {
 
-        show_map(mapScatter, mapTitle);
+        QDateTime currTime = QDateTime::currentDateTime();
+        show_map(mapScatter, mapTitle, currTime);
 
     });
     this->mapTimer->start();
@@ -229,8 +256,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     histStart = histDateEdit->dateTime().addSecs(-1800).toTime_t();
     histEnd = histDateEdit->dateTime().toTime_t();
-  //  QDateTime t = QDateTime::fromTime_t(histStart);
-  //  histDateEdit->setDateTime(t);
     histMap = db->number_of_rilevations(histStart, histEnd);
 
     for(map<string,num_ril>::iterator itMap=histMap.begin(); itMap!=histMap.end();++itMap){
@@ -453,8 +478,77 @@ MainWindow::MainWindow(QWidget *parent)
     // TIMELAPSE TAB
 
 
+    // Create time and date picker
+
+    QLabel *startLapseLabel = new QLabel(tr("Pick start time"));
+
+    QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-1800);
+
+    QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(1800));
+    lapseEnd->setMaximumDateTime(QDateTime::currentDateTime());
+    lapseEnd->setDisplayFormat("yyyy.MM.dd hh:mm");
+
+    QDateTimeEdit *lapseStart = new QDateTimeEdit(lapseTime);
+    lapseStart->setMaximumDateTime(lapseEnd->dateTime().addSecs(-1800));
+    lapseStart->setDisplayFormat("yyyy.MM.dd hh:mm");
+
+    QLabel *endLapseLabel = new QLabel(tr("Pick end time"));
+
+    this->diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
+
+    QPushButton *lapse_update_button = new QPushButton("Update", this);
+
+    QChartView *timeLapseScatter = new QChartView();
+    QString timeLapseTitle = lapseTime.toString("d/M/yyyy hh:mm");
+
+    show_map(timeLapseScatter, timeLapseTitle, lapseTime);
+
+    QSlider *timeLapseSlider = new QSlider(Qt::Horizontal);
+    timeLapseSlider->setTickInterval(1);
+    timeLapseSlider->setRange(0,30);
+    timeLapseSlider->setTickPosition(QSlider::TicksAbove);
+
+    QLabel *tickLabel = new QLabel("1");
+    tickLabel->setAlignment(Qt::AlignHCenter);    
+
+    connect(lapseStart, &QDateTimeEdit::dateTimeChanged, this, [lapseEnd] (QDateTime limitTime) {
+        lapseEnd->setMinimumDateTime(limitTime.addSecs(1800));
+    });
+
+    connect(lapseEnd, &QDateTimeEdit::dateTimeChanged, this, [lapseStart] (QDateTime limitTime) {
+        lapseStart->setMaximumDateTime(limitTime.addSecs(-1800));
+    });
+
+    connect(lapse_update_button, &QPushButton::released, this, [&, timeLapseSlider, tickLabel, timeLapseScatter, lapseStart, lapseEnd] () {
+        timeLapseSlider->setSliderPosition(0);
+        tickLabel->setNum(timeLapseSlider->value());
+        diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
+        QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*timeLapseSlider->value());
+        QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse);
+    });
+
+    connect(timeLapseSlider, &QSlider::valueChanged, this, [&, tickLabel, timeLapseScatter, lapseStart] (int sliderValue) {
+        tickLabel->setNum(sliderValue);
+        QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*sliderValue);
+        QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse);
+    });
+
 
     QVBoxLayout *timeLayout = new QVBoxLayout;
+    QHBoxLayout *editLayout = new QHBoxLayout;
+    QVBoxLayout *pickLayout = new QVBoxLayout;
+    pickLayout->addWidget(startLapseLabel);
+    pickLayout->addWidget(lapseStart);
+    pickLayout->addWidget(endLapseLabel);
+    pickLayout->addWidget(lapseEnd);
+    editLayout->addLayout(pickLayout,5);
+    editLayout->addWidget(lapse_update_button,Qt::AlignRight);
+    timeLayout->addLayout(editLayout);
+    timeLayout->addWidget(timeLapseScatter);
+    timeLayout->addWidget(timeLapseSlider);
+    timeLayout->addWidget(tickLabel);
     QWidget *timeWidget = new QWidget;
     timeWidget->setLayout(timeLayout);
 

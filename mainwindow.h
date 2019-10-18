@@ -37,6 +37,7 @@ private:
     bool triang_started;
     map<string, Point> roots;
     Db_original* db;
+    qint64 diffTick;
     
     void InsertButtonClicked(QSpinBox*, QLineEdit*, QLineEdit*, QLineEdit*, QTextEdit*);
     void CheckNRoots(QSpinBox*);
@@ -50,7 +51,7 @@ private:
     void DB();    
 
     // Tabs
-    void show_map(QChartView *mapScatter, string mapTitles);
+    void show_map(QChartView *mapScatter, QString mapTitles, QDateTime currTime);
     void show_stats_graph(QLabel *statsLabel, int indexCombo, QChartView *statsChartViewBar1, QChartView *statsChartViewBar2QDateTime, QDateTime temp);
     void show_history_plot(QLabel *histLabel, QChartView *histChartViewBar, QDateTimeEdit *histDateEdit);
 
