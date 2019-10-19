@@ -51,7 +51,8 @@ private:
     void DB();    
 
     // Tabs
-    void show_map(QChartView *mapScatter, QString mapTitles, QDateTime currTime);
+    void show_map(QChartView *mapScatter, QString mapTitles);
+    void show_map(QChartView *mapScatter, QString mapTitles, QDateTime currTime,int );
     void show_stats_graph(QLabel *statsLabel, int indexCombo, QChartView *statsChartViewBar1, QChartView *statsChartViewBar2QDateTime, QDateTime temp);
     void show_history_plot(QLabel *histLabel, QChartView *histChartViewBar, QDateTimeEdit *histDateEdit);
 

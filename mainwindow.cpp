@@ -84,7 +84,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     QChartView *mapScatter = new QChartView();
-    string mapTitle = "Real time map of detected devices";
+
+    QString mapTitle = "Real time map of detected devices";
 
     QPushButton *ChangeButton=new QPushButton("Set constants", this);
     connect(ChangeButton, &QPushButton::released, this, [ENEdit, MPEdit, DevicesList, this](){
@@ -154,6 +155,9 @@ MainWindow::MainWindow(QWidget *parent)
             db->loop1(timev);
             time(&timev);
             qDebug() << "Finish loop.Time: "<<timev;
+            QDateTime currTime = QDateTime::currentDateTime();
+            int n_last_sec=40;
+            show_map(mapScatter, mapTitle, currTime,n_last_sec);
 
 
             // TODO - non ho capito cosa è successo
@@ -202,24 +206,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // MAP TAB
 
-/*
-    QChartView *mapScatter = new QChartView();
-    QString mapTitle = "Real time map of detected devices";
-    QDateTime currTime = QDateTime::currentDateTime();
 
-    show_map(mapScatter, mapTitle, currTime);
 
-    int n_sec_last=10;
-    this->mapTimer->setInterval(n_sec_last*1000);
+    show_map(mapScatter, mapTitle);
 
-    connect(this->mapTimer, &QTimer::timeout,this, [&,mapTitle,mapScatter]() {
 
-        QDateTime currTime = QDateTime::currentDateTime();
-        show_map(mapScatter, mapTitle, currTime);
-
-    });
-    this->mapTimer->start();
-*/
 
 
 
@@ -482,14 +473,14 @@ MainWindow::MainWindow(QWidget *parent)
 
     QLabel *startLapseLabel = new QLabel(tr("Pick start time"));
 
-    QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-1800);
+    QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-900);
 
-    QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(1800));
+    QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(900));
     lapseEnd->setMaximumDateTime(QDateTime::currentDateTime());
     lapseEnd->setDisplayFormat("yyyy.MM.dd hh:mm");
 
     QDateTimeEdit *lapseStart = new QDateTimeEdit(lapseTime);
-    lapseStart->setMaximumDateTime(lapseEnd->dateTime().addSecs(-1800));
+    lapseStart->setMaximumDateTime(lapseEnd->dateTime().addSecs(-900));
     lapseStart->setDisplayFormat("yyyy.MM.dd hh:mm");
 
     QLabel *endLapseLabel = new QLabel(tr("Pick end time"));
@@ -500,8 +491,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     QChartView *timeLapseScatter = new QChartView();
     QString timeLapseTitle = lapseTime.toString("d/M/yyyy hh:mm");
-
-    show_map(timeLapseScatter, timeLapseTitle, lapseTime);
+    int n_last_sec=60;
+    show_map(timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec);
 
     QSlider *timeLapseSlider = new QSlider(Qt::Horizontal);
     timeLapseSlider->setTickInterval(1);
@@ -525,14 +516,14 @@ MainWindow::MainWindow(QWidget *parent)
         diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*timeLapseSlider->value());
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
-        show_map(timeLapseScatter, tickTitle, tickTimeLapse);
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
     });
 
     connect(timeLapseSlider, &QSlider::valueChanged, this, [&, tickLabel, timeLapseScatter, lapseStart] (int sliderValue) {
         tickLabel->setNum(sliderValue);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*sliderValue);
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
-        show_map(timeLapseScatter, tickTitle, tickTimeLapse);
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
     });
 
 
@@ -570,14 +561,7 @@ MainWindow::MainWindow(QWidget *parent)
     setCentralWidget(tw);
 
 
-    /*connect(tw, QOverload<int>::of(&QTabWidget::currentChanged), this, [graphicsViewScatter] (int i) {
 
-        if(i==0){
-            graphicsViewScatter->update();
-        }
-
-
-    });*/
 
 
 

@@ -467,7 +467,7 @@ int Db_original::callback_last_pos(void *data, int argc, char **argv, char **azC
     return 0;
 }
 
-vector<schema_triang> Db_original::last_positions(time_t timestamp) {
+vector<schema_triang> Db_original::last_positions(time_t timestamp, int n_sec) {
 
     time_t timev;
     time(&timev);
@@ -489,7 +489,7 @@ vector<schema_triang> Db_original::last_positions(time_t timestamp) {
     string timestamp_fin_s(timestamp_fin_char);
 
     char timestamp_in_char[20];
-    CTimeSpan sec_range(0, 0, 0, INT_SEC);
+    CTimeSpan sec_range(0, 0, 0, n_sec);
     CTime timestamp_in = timestamp_fin - sec_range;
     rawtime = timestamp_in.GetTime();
     localtime_s(&timeinfo, &rawtime);
