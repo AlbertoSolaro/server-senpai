@@ -17,6 +17,8 @@ int Triangulation::measure_power=-43;
 float Triangulation::constant_envir=2.5;
 int Triangulation::nschede;
 float Triangulation::margin = 0.5;
+float Triangulation::xmax=2;
+float Triangulation::xmin=-2;
 
 void Triangulation::initTriang(map<string, Point> roots, int measured_power, float enviromental_constant, int nschede) {
   Triangulation::setRoots(roots);

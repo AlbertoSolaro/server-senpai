@@ -326,6 +326,7 @@ void Db_original::loop1(time_t timestamp)  {
         //serve solo per test
         //schema_triang dato_triang(3, "98-54-1B-31-AC-8B", 0, "20191001190020", 10, 20);
     if(!isnan(estimated_point.x)||!isnan(estimated_point.y)){
+        if((estimated_point.x>triang.xmin && estimated_point.x<triang.xmax) && (estimated_point.y>triang.xmin && estimated_point.y<triang.xmax) ){
         schema_triang dato_triang(69, selected->first.c_str(), selected->second[0].isPub, selected->second[0].timestamp.c_str(), estimated_point.x, estimated_point.y);
 
         //inserisco il risultato della triangolazione nella tabella History
@@ -345,6 +346,7 @@ void Db_original::loop1(time_t timestamp)  {
         }
 
         sqlite3_finalize(stmt);
+    }
     }
     }
 /*

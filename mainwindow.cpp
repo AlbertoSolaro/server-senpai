@@ -114,59 +114,6 @@ MainWindow::MainWindow(QWidget *parent)
     this->db = new Db_original();
 
     QPushButton *StartButton=new QPushButton("START TRIANGULATION", this);
-    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter](){
-        if(this->triang_started){
-            delete timer;
-            this->mqtt.kill();
-            this->timer = new QTimer(this);
-            this->triang_started=false;
-            StartButton->setText("START TRIANGULATION");
-            return;
-        }
-        if(this->n_roots!=integerSpinBox->value()){
-            QMessageBox msgbox;
-            msgbox.setText("Number of roots is not the same as declared.");
-            msgbox.exec();
-            return;
-        }
-        this->measured_power=MPEdit->text().toInt();
-        this->env_const=ENEdit->text().toFloat();
-
-        // Start MQTT
-        MqttStart();
-
-        // Start DB
-        db->triang=Triangulation();
-        // Init triangulation
-        // TODO - read configuration
-        //Point root1(0.0, 2.5), root2(3.8,0.0); //root3(0.0,0.0);
-        //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("A4:CF:12:55:88:F0",root3);
-        //this->roots = { a,b};
-
-        db->triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
-
-        this->triang_started=true;
-        StartButton->setText("STOP TRIANGULATION");
-        int n_sec_history=10;
-        this->timer->setInterval(n_sec_history*1000);
-        connect(this->timer, &QTimer::timeout,this, [this,mapTitle,mapScatter]() {
-            time_t timev;
-            time(&timev);
-            db->loop1(timev);
-            time(&timev);
-            qDebug() << "Finish loop.Time: "<<timev;
-            QDateTime currTime = QDateTime::currentDateTime();
-            int n_last_sec=40;
-            show_map(mapScatter, mapTitle, currTime,n_last_sec);
-
-
-            // TODO - non ho capito cosa è successo
-            //show_map(mapScatter, mapTitle);
-
-            // this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
-        });
-        this->timer->start();
-    });
 
     QPushButton *RemoveButton=new QPushButton("Remove roots", this);
     connect(RemoveButton, &QPushButton::released, this, [DevicesList, this, StartButton](){
@@ -473,9 +420,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     QLabel *startLapseLabel = new QLabel(tr("Pick start time"));
 
-    QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-900);
+    QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-1800);
 
-    QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(900));
+    QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(1800));
     lapseEnd->setMaximumDateTime(QDateTime::currentDateTime());
     lapseEnd->setDisplayFormat("yyyy.MM.dd hh:mm");
 
@@ -492,7 +439,8 @@ MainWindow::MainWindow(QWidget *parent)
     QChartView *timeLapseScatter = new QChartView();
     QString timeLapseTitle = lapseTime.toString("d/M/yyyy hh:mm");
     int n_last_sec=60;
-    show_map(timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec);
+
+    show_map(timeLapseScatter, timeLapseTitle);
 
     QSlider *timeLapseSlider = new QSlider(Qt::Horizontal);
     timeLapseSlider->setTickInterval(1);
@@ -503,11 +451,11 @@ MainWindow::MainWindow(QWidget *parent)
     tickLabel->setAlignment(Qt::AlignHCenter);    
 
     connect(lapseStart, &QDateTimeEdit::dateTimeChanged, this, [lapseEnd] (QDateTime limitTime) {
-        lapseEnd->setMinimumDateTime(limitTime.addSecs(1800));
+        lapseEnd->setMinimumDateTime(limitTime.addSecs(900));
     });
 
     connect(lapseEnd, &QDateTimeEdit::dateTimeChanged, this, [lapseStart] (QDateTime limitTime) {
-        lapseStart->setMaximumDateTime(limitTime.addSecs(-1800));
+        lapseStart->setMaximumDateTime(limitTime.addSecs(-900));
     });
 
     connect(lapse_update_button, &QPushButton::released, this, [&, timeLapseSlider, tickLabel, timeLapseScatter, lapseStart, lapseEnd] () {
@@ -516,14 +464,20 @@ MainWindow::MainWindow(QWidget *parent)
         diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*timeLapseSlider->value());
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        if(this->triang_started)
         show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
+        else
+            show_map(timeLapseScatter, tickTitle);
     });
 
     connect(timeLapseSlider, &QSlider::valueChanged, this, [&, tickLabel, timeLapseScatter, lapseStart] (int sliderValue) {
         tickLabel->setNum(sliderValue);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*sliderValue);
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        if(this->triang_started)
         show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
+        else
+            show_map(timeLapseScatter, tickTitle);
     });
 
 
@@ -560,6 +514,65 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(tw);
 
+    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter,tw,timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec](){
+        if(this->triang_started){
+            delete timer;
+            this->mqtt.kill();
+            this->timer = new QTimer(this);
+            this->triang_started=false;
+            StartButton->setText("START TRIANGULATION");
+            return;
+        }
+        if(this->n_roots!=integerSpinBox->value()){
+            QMessageBox msgbox;
+            msgbox.setText("Number of roots is not the same as declared.");
+            msgbox.exec();
+            return;
+        }
+        this->measured_power=MPEdit->text().toInt();
+        this->env_const=ENEdit->text().toFloat();
+
+        // Start MQTT
+        MqttStart();
+
+        // Start DB
+        db->triang=Triangulation();
+        // Init triangulation
+        // TODO - read configuration
+        //Point root1(0.0, 2.5), root2(3.8,0.0); //root3(0.0,0.0);
+        //pair<string,Point> a("30:AE:A4:1D:52:BC",root1),b("30:AE:A4:75:23:E8",root2);//,c("A4:CF:12:55:88:F0",root3);
+        //this->roots = { a,b};
+
+        db->triang.initTriang(this->roots, this->measured_power, this->env_const, integerSpinBox->value());
+
+        this->triang_started=true;
+        StartButton->setText("STOP TRIANGULATION");
+        int n_sec_history=10;
+        this->timer->setInterval(n_sec_history*1000);
+        show_map1(mapScatter,mapTitle);
+        tw->setCurrentIndex(1);
+
+
+        show_map(timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec);
+
+        connect(this->timer, &QTimer::timeout,this, [this,mapTitle,mapScatter]() {
+            time_t timev;
+            time(&timev);
+            db->loop1(timev);
+            time(&timev);
+            qDebug() << "Finish loop.Time: "<<timev;
+            QDateTime currTime = QDateTime::currentDateTime();
+            int n_last_sec=40;
+            show_map(mapScatter, mapTitle, currTime,n_last_sec);
+
+
+            // TODO - non ho capito cosa è successo
+            //show_map(mapScatter, mapTitle);
+
+            // this->db->loop1(CTime(2019,10,16,00,55,00).GetTime());
+        });
+        this->timer->start();
+    });
 
 
 
