@@ -12,8 +12,8 @@ void MainWindow::show_history_plot(QLabel *histLabel, QChartView *histChartViewB
     QDateTime temp = histDateEdit->dateTime();
     QString dateText = QString("Date selected: %1").arg(temp.toString("d/M/yyyy"));
     histLabel->setText(dateText);
-    QBarSet *set0hist = new QBarSet("Private MAC");
-    QBarSet *set1hist = new QBarSet("Public MAC");
+    QBarSet *set0hist = new QBarSet("Public MAC");
+    QBarSet *set1hist = new QBarSet("Private MAC");
 
     map<string, num_ril> histMap;
 
@@ -44,7 +44,7 @@ void MainWindow::show_history_plot(QLabel *histLabel, QChartView *histChartViewB
 
     QStringList categories;
 
-    categories << temp.time().toString("hh:mm") << temp.time().addSecs(300).toString("hh:mm") << temp.time().addSecs(600).toString("hh:mm") << temp.time().addSecs(900).toString("hh:mm") << temp.time().addSecs(1200).toString("hh:mm") << temp.time().addSecs(1500).toString("hh:mm");
+    categories << temp.time().addSecs(300).toString("hh:mm") << temp.time().addSecs(600).toString("hh:mm") << temp.time().addSecs(900).toString("hh:mm") << temp.time().addSecs(1200).toString("hh:mm") << temp.time().addSecs(1500).toString("hh:mm") << temp.time().addSecs(1800).toString("hh:mm");
 
     QBarCategoryAxis *axisX = new QBarCategoryAxis();
     axisX->append(categories);

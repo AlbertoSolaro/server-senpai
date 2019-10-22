@@ -8,8 +8,10 @@ class best_k_mac {
 public:
 	vector<pair<string, vector<int>>> best_mac;
 	vector<string> etichette_periodi;
-    void insert(pair < string, vector<int>> mac_periods){
+    vector<int> n_period;
+    void insert(pair < string, vector<int>> mac_periods,int n_periods){
         best_mac.push_back(mac_periods);
+        n_period.push_back(n_periods);
     }
 
     best_k_mac(vector<string> etichette){
@@ -32,5 +34,5 @@ public:
         }
 
     }
-    best_k_mac() {};
+    best_k_mac() {}
 };

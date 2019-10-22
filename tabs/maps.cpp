@@ -51,7 +51,7 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
 
         string phoneMAC = it->MAC;
 
-        if(strncmp(phoneMAC.c_str(), MACfilter.toStdString().c_str(), MACfilter.toStdString().size()) || MACfilter.isNull()) {
+        if(strncmp(phoneMAC.c_str(), MACfilter.toStdString().c_str(), MACfilter.toStdString().size())==0 || strcmp(MACfilter.toStdString().c_str(),"")==0 ){
             QScatterSeries *phoneScatter = new QScatterSeries();
             phoneScatter->setPointLabelsVisible(false);
             MainWindow::connect(phoneScatter, &QXYSeries::hovered, this, [phoneScatter](const QPointF &waste, bool check) {
@@ -63,10 +63,10 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
             phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
             phoneScatter->setMarkerSize(10.0);
             if(it->isPub) {
-                phoneScatter->setColor("green");
+                phoneScatter->setColor("blue");
             }
             else {
-                phoneScatter->setColor("blue");
+                phoneScatter->setColor("green");
             }
             phoneScatter->setPointLabelsFormat(it->MAC);
 
@@ -150,10 +150,10 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle) {
         phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
         phoneScatter->setMarkerSize(10.0);
         if(it->isPub) {
-            phoneScatter->setColor("green");
+            phoneScatter->setColor("blue");
         }
         else {
-            phoneScatter->setColor("blue");
+            phoneScatter->setColor("green");
         }                phoneScatter->setPointLabelsFormat(it->MAC);
         *phoneScatter << QPointF(it->x, it->y);
         if (xMax < it->x)

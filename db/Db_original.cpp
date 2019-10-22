@@ -433,7 +433,7 @@ map<string,num_ril> Db_original::number_of_rilevations(time_t timestamp_start, t
         string sql;
         sql = "SELECT COUNT(*) FROM History where ISPUB=1 AND TIMESTAMP >='" + timestamp_in_s + "' AND TIMESTAMP <'" + timestamp_fin_s + "' GROUP BY MAC HAVING COUNT(DISTINCT TIMESTAMP)>="+ to_string(N_rilevazioni);
 
-        rc = sqlite3_exec(db, sql.c_str(), callback_count_ril_pub, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
+        rc = sqlite3_exec(db, sql.c_str(), callback_count_ril_no_pub, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
 
         if (rc != SQLITE_OK) {
             clog << "SQL error in Query count_rilevazioni_pub: " << zErrMsg << endl;
@@ -445,7 +445,7 @@ map<string,num_ril> Db_original::number_of_rilevations(time_t timestamp_start, t
 
         sql = "SELECT COUNT(*) FROM History where ISPUB=0 AND TIMESTAMP >='" + timestamp_in_s + "' AND TIMESTAMP <'" + timestamp_fin_s + "' GROUP BY MAC HAVING COUNT(DISTINCT TIMESTAMP)>=" + to_string(N_rilevazioni);
 
-        rc = sqlite3_exec(db, sql.c_str(), callback_count_ril_no_pub, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
+        rc = sqlite3_exec(db, sql.c_str(), callback_count_ril_pub, (void*)data, &zErrMsg); //per oni record ritornato dalla query chiamo la callback
 
         if (rc != SQLITE_OK) {
             clog << "SQL error in Query count_rilevazioni_no_pub : " << zErrMsg << endl;
@@ -544,9 +544,11 @@ int Db_original::callback_statistics(void *data, int argc, char **argv, char **a
     }
 
     if((found->second).periodi.at(info[1])==0)
-        (found->second).count_periodi++;
-    (found->second).periodi.at(info[1])+=atoi(argv[1]);
+       (found->second).count_periodi++;
 
+
+    (found->second).periodi.at(info[1])+=atoi(argv[1]);
+    (found->second).count_ril+=atoi(argv[1]);
 
     return 0;
 }
@@ -642,17 +644,22 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
 
     Comparator compFunctor = [](pair<string, statistics> elem1, pair<string, statistics> elem2) {
        if(elem2.second.count_periodi== elem1.second.count_periodi)
-           return elem1.first<elem2.first;
-        return elem2.second.count_periodi < elem1.second.count_periodi;
+                if(elem1.second.count_ril==elem2.second.count_ril)
+                    return elem1.first<elem2.first;
+                else
+                    return elem2.second.count_ril<elem1.second.count_ril;
+       else
+       return elem2.second.count_periodi < elem1.second.count_periodi;
     };
 
     set<pair<string, statistics>, Comparator> ordered_stat(	stat.begin(), stat.end(), compFunctor);
     //salvo i K_BEST mac aventi maggiore frequenza: salvo il vettore con le etichette e un vettore di MAC->vettore_frequenze_periodo
     best_k_mac best_macs(etichette_periodo);
     set<pair<string, statistics>>::iterator it = ordered_stat.begin();
+
     for (i = 0; i < K_BEST && it!=ordered_stat.end(); i++, ++it)
     {
-        best_macs.insert(pair<string, vector<int>>(it->first, it->second.periodi));
+        best_macs.insert(pair<string, vector<int>>(it->first, it->second.periodi),it->second.count_periodi);
     }
     if(i==0)
     {
@@ -661,7 +668,7 @@ best_k_mac Db_original::statistics_fun(time_t timestamp_start, int mode)
     }
     if(i==1)
     {
-        best_macs.insert(pair<string,vector<int>>("0",vector<int>(etichette_periodo.size(),0)));
+        best_macs.insert(pair<string,vector<int>>("0",vector<int>(etichette_periodo.size(),0)),0);
     }
 
     return best_macs;

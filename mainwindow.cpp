@@ -163,7 +163,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QPushButton *map_update_button = new QPushButton("Filter", this);
 
-    connect(map_update_button, &QPushButton::released, this, [&, mapScatter, mapTitle] () {
+    connect(map_update_button, &QPushButton::released, this, [&, mapScatter, mapTitle,searchEdit] () {
         QString MACfilter = searchEdit->text();
         QDateTime currTime = QDateTime::currentDateTime();
         int n_last_sec=40;
@@ -489,20 +489,24 @@ MainWindow::MainWindow(QWidget *parent)
         lapseStart->setMaximumDateTime(limitTime.addSecs(-900));
     });
 
-    connect(lapse_update_button, &QPushButton::released, this, [&, timeLapseSlider, tickLabel, timeLapseScatter, lapseStart, lapseEnd] () {
+    connect(lapse_update_button, &QPushButton::released, this, [&, timeLapseSlider, tickLabel, timeLapseScatter, lapseStart, lapseEnd,filterEdit] () {
         timeLapseSlider->setSliderPosition(0);
         tickLabel->setNum(timeLapseSlider->value());
         diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*timeLapseSlider->value());
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
-        QString MACfilter = filterEdit->text();
+        QString MACfilter= filterEdit->text();
+        /*if(filterEdit->text().size()>0)
+            MACfilter = filterEdit->text();
+        else
+            MACfilter="";*/
         if(this->triang_started)
         show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick, MACfilter);
         else
             show_map(timeLapseScatter, tickTitle);
     });
 
-    connect(timeLapseSlider, &QSlider::valueChanged, this, [&, tickLabel, timeLapseScatter, lapseStart] (int sliderValue) {
+    connect(timeLapseSlider, &QSlider::valueChanged, this, [&, tickLabel, timeLapseScatter, lapseStart,filterEdit] (int sliderValue) {
         tickLabel->setNum(sliderValue);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*sliderValue);
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");

@@ -8,6 +8,7 @@ class statistics {
 public:
 	vector<int> periodi;
 	int count_periodi;
+    int count_ril;
 
     statistics(int i) {
         if(i==1)
@@ -16,5 +17,6 @@ public:
             periodi.assign(N_ore,0);
 
         count_periodi = 0;
+        count_ril=0;
     }
 };

@@ -25,7 +25,7 @@ void MainWindow::show_stats_graph(QLabel *statsLabel, int indexCombo, QChartView
     if (bestStat.best_mac[0].first == "0")
         mac1Text = QString("No device detected");
     else
-        mac1Text = QString("MAC: %1").arg(QString::fromStdString(bestStat.best_mac[0].first));
+        mac1Text = QString("MAC: %1").arg(QString::fromStdString(bestStat.best_mac[1].first));
 
     if (bestStat.best_mac[1].first == "0")
         mac2Text = QString("No device detected");
@@ -46,6 +46,7 @@ void MainWindow::show_stats_graph(QLabel *statsLabel, int indexCombo, QChartView
     QChart *statsChartBar1 = new QChart();
     statsChartBar1->addSeries(statsLineseries1);
     statsChartBar1->setTitle(mac1Text);
+
     statsChartBar1->setAnimationOptions(QChart::SeriesAnimations);
     CTime time_fin;
     CTime time_in(temp.toTime_t());
@@ -59,17 +60,17 @@ void MainWindow::show_stats_graph(QLabel *statsLabel, int indexCombo, QChartView
 
             statsCategories<< QString((time_fin-range).Format(_T("%H:%M")));
         }*/
-            statsCategories << temp.toString("hh:mm") << temp.addSecs(1200).toString("hh:mm") << temp.addSecs(2400).toString("hh:mm") << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(4800).toString("hh:mm") << temp.addSecs(6000).toString("hh:mm");
+            statsCategories  << temp.addSecs(1200).toString("hh:mm") << temp.addSecs(2400).toString("hh:mm") << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(4800).toString("hh:mm") << temp.addSecs(6000).toString("hh:mm")<< temp.addSecs(7200).toString("hh:mm");
             statsCategories.sort();
             break;
         case 1:
-            statsCategories << temp.toString("hh:mm") << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(7200).toString("hh:mm") << temp.addSecs(10800).toString("hh:mm") << temp.addSecs(14400).toString("hh:mm") << temp.addSecs(18000).toString("hh:mm");
+            statsCategories  << temp.addSecs(3600).toString("hh:mm") << temp.addSecs(7200).toString("hh:mm") << temp.addSecs(10800).toString("hh:mm") << temp.addSecs(14400).toString("hh:mm") << temp.addSecs(18000).toString("hh:mm")<< temp.addSecs(21600).toString("hh:mm");
             break;
         case 2:
-            statsCategories << temp.toString("hh:mm") << temp.addSecs(14400).toString("hh:mm") << temp.addSecs(28800).toString("hh:mm") << temp.addSecs(43200).toString("hh:mm") << temp.addSecs(57600).toString("hh:mm") << temp.addSecs(72000).toString("hh:mm");
+            statsCategories << temp.addSecs(14400).toString("hh:mm") << temp.addSecs(28800).toString("hh:mm") << temp.addSecs(43200).toString("hh:mm") << temp.addSecs(57600).toString("hh:mm") << temp.addSecs(72000).toString("hh:mm") << temp.addSecs(86400).toString("hh:mm");
             break;
         case 3:
-            statsCategories << temp.toString("d/M/yyyy") << temp.addDays(1).toString("d/M/yyyy") << temp.addDays(2).toString("d/M/yyyy") << temp.addDays(3).toString("d/M/yyyy") << temp.addDays(4).toString("d/M/yyyy") << temp.addDays(5).toString("d/M/yyyy") << temp.addDays(6).toString("d/M/yyyy");
+            statsCategories<< temp.addDays(1).toString("d/M/yyyy") << temp.addDays(2).toString("d/M/yyyy") << temp.addDays(3).toString("d/M/yyyy") << temp.addDays(4).toString("d/M/yyyy") << temp.addDays(5).toString("d/M/yyyy") << temp.addDays(6).toString("d/M/yyyy") << temp.addDays(7).toString("d/M/yyyy") ;
             break;
     }
 
