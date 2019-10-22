@@ -9,7 +9,7 @@
 #include <regex>
 #include <QtGlobal>
 
-void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime currTime,int n_last_sec) {
+void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime currTime,int n_last_sec, QString MACfilter) {
 
     time_t timev;
     time(&timev);
@@ -28,7 +28,7 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
         });
         boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
         boardScatter->setMarkerSize(20.0);
-        boardScatter->setColor("blue");
+        boardScatter->setColor("black");
         QString boardLabel = it2->first.c_str();
 
        // boardLabel.append("\n test");
@@ -47,29 +47,42 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
     vlast = db->last_positions(currTime.toTime_t(),n_last_sec);
 
      for (vector<schema_triang>::iterator it = vlast.begin(); it != vlast.end(); ++it) {
-        QScatterSeries *phoneScatter = new QScatterSeries();
-        phoneScatter->setPointLabelsVisible(false);
-        MainWindow::connect(phoneScatter, &QXYSeries::hovered, this, [phoneScatter](const QPointF &waste, bool check) {
-            if (check == true)
-                phoneScatter->setPointLabelsVisible(true);
-            else
-                phoneScatter->setPointLabelsVisible(false);
-        });
-        phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
-        phoneScatter->setMarkerSize(10.0);
-        phoneScatter->setColor("green");
-        phoneScatter->setPointLabelsFormat(it->MAC);
 
-        *phoneScatter << QPointF(it->x, it->y);
-       /* if (xMax < it->x)
-            xMax = it->x;
-        if (xMax < it->y)
-            xMax = it->y;
-        if (xMin > it->x)
-            xMin = it->x;
-        if (xMin > it->y)
-            xMin = it->y;*/
-        vSeries.push_back(phoneScatter);
+
+        string phoneMAC = it->MAC;
+
+        if(strncmp(phoneMAC.c_str(), MACfilter.toStdString().c_str(), MACfilter.toStdString().size()) || MACfilter.isNull()) {
+            QScatterSeries *phoneScatter = new QScatterSeries();
+            phoneScatter->setPointLabelsVisible(false);
+            MainWindow::connect(phoneScatter, &QXYSeries::hovered, this, [phoneScatter](const QPointF &waste, bool check) {
+                if (check == true)
+                    phoneScatter->setPointLabelsVisible(true);
+                else
+                    phoneScatter->setPointLabelsVisible(false);
+            });
+            phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
+            phoneScatter->setMarkerSize(10.0);
+            if(it->isPub) {
+                phoneScatter->setColor("green");
+            }
+            else {
+                phoneScatter->setColor("blue");
+            }
+            phoneScatter->setPointLabelsFormat(it->MAC);
+
+            *phoneScatter << QPointF(it->x, it->y);
+           /* if (xMax < it->x)
+                xMax = it->x;
+            if (xMax < it->y)
+                xMax = it->y;
+            if (xMin > it->x)
+                xMin = it->x;
+            if (xMin > it->y)
+                xMin = it->y;*/
+            vSeries.push_back(phoneScatter);
+        }
+
+
     }
 
     // Configure your chart
@@ -136,8 +149,12 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle) {
         });
         phoneScatter->setMarkerShape(QScatterSeries::MarkerShapeCircle);
         phoneScatter->setMarkerSize(10.0);
-        phoneScatter->setColor("green");
-        phoneScatter->setPointLabelsFormat(it->MAC);
+        if(it->isPub) {
+            phoneScatter->setColor("green");
+        }
+        else {
+            phoneScatter->setColor("blue");
+        }                phoneScatter->setPointLabelsFormat(it->MAC);
         *phoneScatter << QPointF(it->x, it->y);
         if (xMax < it->x)
             xMax = it->x;
@@ -204,7 +221,7 @@ void MainWindow::show_map1(QChartView *mapScatter, QString mapTitle) {
         });
         boardScatter->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
         boardScatter->setMarkerSize(20.0);
-        boardScatter->setColor("blue");
+        boardScatter->setColor("black");
         QString boardLabel = it2->first.c_str();
 
        // boardLabel.append("\n test");

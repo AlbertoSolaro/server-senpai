@@ -157,6 +157,33 @@ MainWindow::MainWindow(QWidget *parent)
 
     show_map(mapScatter, mapTitle);
 
+    QLabel *nameLabel = new QLabel(tr("Filter by MAC address"));
+
+    QLineEdit *searchEdit=new QLineEdit();
+
+    QPushButton *map_update_button = new QPushButton("Filter", this);
+
+    connect(map_update_button, &QPushButton::released, this, [&, mapScatter, mapTitle] () {
+        QString MACfilter = searchEdit->text();
+        QDateTime currTime = QDateTime::currentDateTime();
+        int n_last_sec=40;
+        if(this->triang_started)
+        show_map(mapScatter, mapTitle, currTime, n_last_sec, MACfilter);
+        else
+            show_map(mapScatter, mapTitle);
+    });
+
+
+    QVBoxLayout *mapLayout = new QVBoxLayout;
+    QHBoxLayout *searchLayout = new QHBoxLayout;
+    mapLayout->addWidget(nameLabel);
+    searchLayout->addWidget(searchEdit,5);
+    searchLayout->addWidget(map_update_button,Qt::AlignRight);
+    mapLayout->addLayout(searchLayout);
+    mapLayout->addWidget(mapScatter);
+    QWidget *mapWidget = new QWidget;
+    mapWidget->setLayout(mapLayout);
+
 
 
 
@@ -423,7 +450,6 @@ MainWindow::MainWindow(QWidget *parent)
     QDateTime lapseTime = QDateTime::currentDateTime().addSecs(-1800);
 
     QDateTimeEdit *lapseEnd = new QDateTimeEdit(lapseTime.addSecs(1800));
-    lapseEnd->setMaximumDateTime(QDateTime::currentDateTime());
     lapseEnd->setDisplayFormat("yyyy.MM.dd hh:mm");
 
     QDateTimeEdit *lapseStart = new QDateTimeEdit(lapseTime);
@@ -431,6 +457,11 @@ MainWindow::MainWindow(QWidget *parent)
     lapseStart->setDisplayFormat("yyyy.MM.dd hh:mm");
 
     QLabel *endLapseLabel = new QLabel(tr("Pick end time"));
+
+    QLabel *filterLabel = new QLabel(tr("Filter by MAC address"));
+
+    QLineEdit *filterEdit=new QLineEdit();
+
 
     this->diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
 
@@ -464,8 +495,9 @@ MainWindow::MainWindow(QWidget *parent)
         diffTick = (lapseStart->dateTime().secsTo(lapseEnd->dateTime())/30);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*timeLapseSlider->value());
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        QString MACfilter = filterEdit->text();
         if(this->triang_started)
-        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick, MACfilter);
         else
             show_map(timeLapseScatter, tickTitle);
     });
@@ -474,8 +506,9 @@ MainWindow::MainWindow(QWidget *parent)
         tickLabel->setNum(sliderValue);
         QDateTime tickTimeLapse = lapseStart->dateTime().addSecs(diffTick*sliderValue);
         QString tickTitle = tickTimeLapse.toString("d/M/yyyy hh:mm");
+        QString MACfilter = filterEdit->text();
         if(this->triang_started)
-        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick);
+        show_map(timeLapseScatter, tickTitle, tickTimeLapse,this->diffTick, MACfilter);
         else
             show_map(timeLapseScatter, tickTitle);
     });
@@ -488,6 +521,8 @@ MainWindow::MainWindow(QWidget *parent)
     pickLayout->addWidget(lapseStart);
     pickLayout->addWidget(endLapseLabel);
     pickLayout->addWidget(lapseEnd);
+    pickLayout->addWidget(filterLabel);
+    pickLayout->addWidget(filterEdit);
     editLayout->addLayout(pickLayout,5);
     editLayout->addWidget(lapse_update_button,Qt::AlignRight);
     timeLayout->addLayout(editLayout);
@@ -506,7 +541,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     auto tw = new QTabWidget (this);
     tw->addTab(settingsWidget, "Settings");
-    tw->addTab(mapScatter, "Map");
+    tw->addTab(mapWidget, "Map");
     tw->addTab(histWidget, "History");
     tw->addTab(statsWidget, "Stats");
     tw->addTab(timeWidget, "Time lapse");
@@ -514,7 +549,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(tw);
 
-    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter,tw,timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec](){
+    connect(StartButton, &QPushButton::released, this, [this, integerSpinBox, StartButton,MPEdit,ENEdit,mapTitle,mapScatter,tw,timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec,searchEdit,filterEdit](){
         if(this->triang_started){
             delete timer;
             this->mqtt.kill();
@@ -552,10 +587,12 @@ MainWindow::MainWindow(QWidget *parent)
         show_map1(mapScatter,mapTitle);
         tw->setCurrentIndex(1);
 
+        QString MACfilter = filterEdit->text();
 
-        show_map(timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec);
 
-        connect(this->timer, &QTimer::timeout,this, [this,mapTitle,mapScatter]() {
+        show_map(timeLapseScatter, timeLapseTitle, lapseTime,n_last_sec, MACfilter);
+
+        connect(this->timer, &QTimer::timeout,this, [this,mapTitle,mapScatter,searchEdit]() {
             time_t timev;
             time(&timev);
             db->loop1(timev);
@@ -563,7 +600,9 @@ MainWindow::MainWindow(QWidget *parent)
             qDebug() << "Finish loop.Time: "<<timev;
             QDateTime currTime = QDateTime::currentDateTime();
             int n_last_sec=40;
-            show_map(mapScatter, mapTitle, currTime,n_last_sec);
+            QString MACfilter = searchEdit->text();
+
+            show_map(mapScatter, mapTitle, currTime,n_last_sec, MACfilter);
 
 
             // TODO - non ho capito cosa è successo
