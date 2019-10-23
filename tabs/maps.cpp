@@ -122,7 +122,7 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
     // Create your chart view
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
-
+   // mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
     time(&timev);
     qDebug() << "Finish show map.Time: "<<timev;
 };
@@ -174,10 +174,13 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle) {
     xMin -= 2;
     axisYmap->setRange(xMin, xMax);
     axisYmap->setLabelFormat(" ");
+    axisYmap->setTickCount((db->triang.xmax-db->triang.xmin)*2);
 
     chartScatter->addAxis(axisYmap, Qt::AlignLeft);
     QValueAxis *axisXmap = new QValueAxis();
     axisXmap->setRange(xMin, xMax);
+    axisXmap->setTickCount((db->triang.xmax-db->triang.xmin)*2);
+
     axisXmap->setLabelFormat(" ");
 
     chartScatter->addAxis(axisXmap, Qt::AlignBottom);
@@ -194,9 +197,13 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle) {
     chartScatter->legend()->setVisible(false);
 
     // Create your chart view
+    mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
-
+    /*qDebug()<<mapScatter->size().width()<<"  " <<mapScatter->size().height();
+    mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
+    qDebug()<<mapScatter->size().width()<<"  " <<mapScatter->size().height();
+    mapScatter->update();*/
 
 };
 
@@ -276,6 +283,7 @@ void MainWindow::show_map1(QChartView *mapScatter, QString mapTitle) {
     // Create your chart view
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
+    //mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
 
 
 };

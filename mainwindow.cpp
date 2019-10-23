@@ -24,7 +24,7 @@ MainWindow::MainWindow(QWidget *parent)
     // SETTINGS TAB
 
     this->n_roots=3;
-    Point a(3.03,0.0), b(0.0,3.99), c(0.0,0.0);
+    Point a(5.0,0.0), b(0.0,5.0), c(0.0,0.0);
     this->roots.insert(pair<string,Point>("30:AE:A4:1D:52:BC",a));
     this->roots.insert(pair<string,Point>("30:AE:A4:75:23:E8",b));
     this->roots.insert(pair<string,Point>("A4:CF:12:55:88:F0",c));
@@ -605,6 +605,8 @@ MainWindow::MainWindow(QWidget *parent)
             QDateTime currTime = QDateTime::currentDateTime();
             int n_last_sec=40;
             QString MACfilter = searchEdit->text();
+
+           // QDateTime currTime = QDateTime::fromTime_t(CTime(2019,10,16,00,57,30).GetTime());
 
             show_map(mapScatter, mapTitle, currTime,n_last_sec, MACfilter);
 
