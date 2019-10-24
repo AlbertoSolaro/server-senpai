@@ -122,7 +122,7 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle, QDateTime cu
     // Create your chart view
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
-   // mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
+    mapScatter->setMaximumSize(500,500);
     time(&timev);
     qDebug() << "Finish show map.Time: "<<timev;
 };
@@ -200,6 +200,7 @@ void MainWindow::show_map(QChartView *mapScatter, QString mapTitle) {
     mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
+
     /*qDebug()<<mapScatter->size().width()<<"  " <<mapScatter->size().height();
     mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
     qDebug()<<mapScatter->size().width()<<"  " <<mapScatter->size().height();
@@ -283,6 +284,8 @@ void MainWindow::show_map1(QChartView *mapScatter, QString mapTitle) {
     // Create your chart view
     mapScatter->setChart(chartScatter);
     mapScatter->setRenderHint(QPainter::Antialiasing);
+    mapScatter->setMaximumSize(500,500);
+
     //mapScatter->resize(mapScatter->size().height(),mapScatter->size().height());
 
 
