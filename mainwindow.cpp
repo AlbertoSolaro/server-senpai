@@ -176,11 +176,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     QVBoxLayout *mapLayout = new QVBoxLayout;
     QHBoxLayout *searchLayout = new QHBoxLayout;
-    mapLayout->addWidget(nameLabel);
-    searchLayout->addWidget(searchEdit,5);
+    mapLayout->addWidget(nameLabel,0,Qt::AlignTop);
+    searchLayout->addWidget(searchEdit,5,Qt::AlignTop);
     searchLayout->addWidget(map_update_button,Qt::AlignRight);
     mapLayout->addLayout(searchLayout);
-    mapLayout->addWidget(mapScatter);
+
+
+    mapLayout->addWidget(mapScatter,0,Qt::AlignHCenter);
     QWidget *mapWidget = new QWidget;
     mapWidget->setLayout(mapLayout);
 
@@ -530,8 +532,8 @@ MainWindow::MainWindow(QWidget *parent)
     editLayout->addLayout(pickLayout,5);
     editLayout->addWidget(lapse_update_button,Qt::AlignRight);
     timeLayout->addLayout(editLayout);
-    timeLayout->addWidget(timeLapseScatter);
-    timeLayout->addWidget(timeLapseSlider);
+    timeLayout->addWidget(timeLapseScatter,Qt::AlignHCenter);
+    timeLayout->addWidget(timeLapseSlider,Qt::AlignHCenter);
     timeLayout->addWidget(tickLabel);
     QWidget *timeWidget = new QWidget;
     timeWidget->setLayout(timeLayout);
